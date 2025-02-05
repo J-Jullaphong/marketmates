@@ -1,0 +1,4 @@
+Django
+python-decouple
+psycopg2-binary
+boto3
