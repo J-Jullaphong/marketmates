@@ -160,6 +160,8 @@ MEDIA_URL = f"{AWS_S3_URL_PROTOCOL}//{AWS_S3_CUSTOM_DOMAIN}/{CKEDITOR_UPLOADS_FO
 CKEDITOR_5_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 CKEDITOR_5_UPLOAD_PATH = "ckeditor/uploads/"
 
+CK_EDITOR_5_UPLOAD_FILE_VIEW_NAME = "ckeditor_file_uploader"
+
 CKEDITOR_5_CONFIGS = {
     "default": {
         "toolbar": [
