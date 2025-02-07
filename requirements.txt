@@ -1,4 +1,6 @@
 Django
+django-ckeditor-5
+django-storages
 python-decouple
 psycopg2-binary
 boto3
