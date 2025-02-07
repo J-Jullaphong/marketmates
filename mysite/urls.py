@@ -16,6 +16,10 @@ Including another URLconf
 """
 from marketmates.views import ckeditor_file_uploader, UnavailableView
 from django.contrib import admin
+from django.contrib.auth.views import (PasswordResetView,
+                                       PasswordResetConfirmView,
+                                       PasswordResetDoneView,
+                                       PasswordResetCompleteView)
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
@@ -26,5 +30,22 @@ urlpatterns = [
     path("ckeditor5/", include('django_ckeditor_5.urls')),
     path("ckeditor5/upload/", ckeditor_file_uploader,
          name="ckeditor_file_uploader"),
+    path('reset-password/',
+         PasswordResetView.as_view(
+             template_name='registration/password_reset.html',
+             email_template_name='registration/password_reset_email.html'),
+         name='password_reset'),
+    path('reset-password/done/',
+         PasswordResetDoneView.as_view(
+             template_name='registration/password_reset_done.html'),
+         name='password_reset_done'),
+    path('reset/<uidb64>/<token>/',
+         PasswordResetConfirmView.as_view(
+             template_name='registration/password_reset_confirm.html'),
+         name='password_reset_confirm'),
+    path('reset-password-complete/',
+         PasswordResetCompleteView.as_view(
+             template_name='registration/password_reset_complete.html'),
+         name='password_reset_complete'),
     path('<path:undefined_path>/', UnavailableView.as_view(), name="404"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

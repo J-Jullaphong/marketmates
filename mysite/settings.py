@@ -58,7 +58,7 @@ ROOT_URLCONF = 'mysite.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -118,6 +118,9 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+AUTHENTICATION_BACKENDS = ['marketmates.backends.EmailBackend',
+                           'django.contrib.auth.backends.ModelBackend']
 
 
 # Internationalization
@@ -182,4 +185,4 @@ CKEDITOR_5_CONFIGS = {
     },
 }
 
-
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
