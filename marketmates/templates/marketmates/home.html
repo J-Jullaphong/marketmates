@@ -1,0 +1,122 @@
+{% extends "marketmates/base.html" %}
+{% load static %}
+
+{% block content %}
+    <div class="container-fluid mt-4">
+        <div class="row">
+
+            <!-- Left Sidebar: Popular Tags & Private Groups -->
+            <aside class="col-lg-3">
+                <section class="mb-4">
+                    <h5 class="fw-bold text-primary">Popular Tags</h5>
+                    <ul class="list-group">
+                        {% for tag in tags %}
+                            <li class="list-group-item border-0 d-flex align-items-center">
+                                <span class="badge bg-primary me-2">#{{ tag.tag_name }}</span>
+                                <small class="text-muted">{{ tag.forum_set.count }} Posts</small>
+                            </li>
+                        {% empty %}
+                            <p class="text-muted">No tags available.</p>
+                        {% endfor %}
+                    </ul>
+                </section>
+
+                <section>
+                    <h5 class="fw-bold text-primary">Private Groups</h5>
+                    <ul class="list-group">
+                        {% for group in private_groups %}
+                            <li class="list-group-item border-0">
+                                <i class="bi bi-people-fill text-secondary"></i>
+                                <strong>{{ group.name }}</strong> ({{ group.members.count }} members)
+                            </li>
+                        {% empty %}
+                            <p class="text-muted">No private groups available.</p>
+                        {% endfor %}
+                    </ul>
+                </section>
+            </aside>
+
+            <!-- Center: Market Update & Posts -->
+            <main class="col-lg-6">
+                <section class="card shadow-sm border-0 mb-4">
+                    <div class="card-body">
+                        <h5 class="fw-bold text-primary">Market Update →</h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <p><strong>SET Index:</strong> <span class="text-danger">1,352.95</span> (-0.65%)</p>
+                            <button class="btn btn-sm btn-outline-primary">View Details</button>
+                        </div>
+                        <p class="mb-2"><strong>Most Active Stocks:</strong></p>
+                        <ul class="list-inline mb-0">
+                            <li class="list-inline-item"><span class="badge bg-danger">TTB: 1.88 (-1.05%)</span></li>
+                            <li class="list-inline-item"><span class="badge bg-success">CCET: 9.15 (+6.78%)</span></li>
+                            <li class="list-inline-item"><span class="badge bg-danger">EA: 3.00 (-0.68%)</span></li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="mb-3">
+                    <div class="input-group shadow-sm">
+                        <input type="text" class="form-control rounded-start-pill" placeholder="What's on your mind?">
+                        <button class="btn btn-primary rounded-end-pill">Create Post</button>
+                    </div>
+                </section>
+
+                {% for forum in forums %}
+                    <article class="card shadow-sm border-0 mb-3">
+                        <div class="card-body d-flex align-items-start">
+                            <!-- Display Image if Available -->
+                            {% if forum.image %}
+                                <img src="{{ forum.image.url }}" class="rounded img-fluid me-3"
+                                     style="width: 100px; height: 100px; object-fit: cover;" alt="{{ forum.title }}">
+                            {% endif %}
+
+                            <!-- Forum Content -->
+                            <div>
+                                <h5 class="card-title fw-bold">
+                                    <a href="{% url 'marketmates:forum_detail' forum.id %}"
+                                       class="text-dark text-decoration-none">
+                                        {{ forum.title }}
+                                    </a>
+                                </h5>
+                                <div class="ck-content text-muted">
+                                    {{ forum.description|safe|truncatewords:30 }}
+                                </div>
+                                <p class="small text-muted mt-2">Posted by
+                                    <strong>{{ forum.created_by.username }}</strong>
+                                    | {{ forum.created_at|date:"F d, Y" }}</p>
+
+                                <!-- Forum Stats -->
+                                <div class="d-flex justify-content-between text-muted small">
+                                    <span><i class="bi bi-chat"></i> {{ forum.comments.count }} Comments</span>
+                                    <span><i class="bi bi-heart"></i> {{ forum.likes }} Likes</span>
+                                    <span><i class="bi bi-eye"></i> {{ forum.views }} Views</span>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+
+            </main>
+
+            <!-- Right Sidebar: Announcements -->
+            <aside class="col-lg-3">
+                <h5 class="fw-bold text-primary">Announcements →</h5>
+                <div class="card border-0 shadow-sm mb-2">
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold">📢 Market Trends & Insights</h6>
+                        <p class="text-muted small">Stay updated with the latest stock trends and investment tips.</p>
+                        <a href="#" class="btn btn-sm btn-outline-primary">Read More</a>
+                    </div>
+                </div>
+                <div class="card border-0 shadow-sm mb-2">
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold">💡 Investment Strategies</h6>
+                        <p class="text-muted small">Learn about long-term and short-term trading strategies.</p>
+                        <a href="#" class="btn btn-sm btn-outline-primary">Explore</a>
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+{% endblock %}
