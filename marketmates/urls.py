@@ -4,4 +4,5 @@ from .views import *
 app_name = 'marketmates'
 
 urlpatterns = [
+    path("", HomeView.as_view(), name="home"),
 ]
