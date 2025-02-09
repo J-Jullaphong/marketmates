@@ -9,5 +9,6 @@ urlpatterns = [
     path("forum/<uuid:pk>/", ForumDetailView.as_view(), name="forum_detail"),
     path("login/", LoginView.as_view(), name="login"),
     path('logout/', LogoutView.as_view(), name='logout'),
-    path("registration/", RegistrationFormView.as_view(), name="registration")
+    path("registration/", RegistrationFormView.as_view(), name="registration"),
+    path("profile/", ProfileView.as_view(), name="profile"),
 ]
