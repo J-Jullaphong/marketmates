@@ -75,10 +75,16 @@
                 <!-- User Profile Dropdown -->
                 <div class="dropdown">
                     <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-person-circle fs-4"></i>
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" alt="Profile Picture"
+                                 class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                        {% else %}
+                            <i class="bi bi-person-circle fs-4"></i>
+                        {% endif %}
+                        <span class="ms-2">{{ user.username }}</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="#">Profile</a></li>
+                        <li><a class="dropdown-item" href="{% url "marketmates:profile" %}">Profile</a></li>
                         <li><a class="dropdown-item" href="#">Settings</a></li>
                         <li>
                             <hr class="dropdown-divider">

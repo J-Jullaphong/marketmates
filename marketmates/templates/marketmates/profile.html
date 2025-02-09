@@ -1,0 +1,151 @@
+{% extends "marketmates/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-3">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-2">
+                <h1 class="mb-0 pt-3 text-center">Profile</h1>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+
+                        <div class="mb-3 text-center">
+                            <div class="profile-image-container" style="position: relative; display: inline-block; cursor: pointer;">
+                                <img id="profileImage" src="{% if form.profile_picture.value %} {{ form.profile_picture.value.url }} {% else %} {% static "images/person-circle.svg" %} {% endif %}" alt="Profile Picture" class="rounded-circle" width="150" height="150" />
+                                <input type="file" name="profile_picture" id="id_profile_picture" accept="image/*" onchange="document.getElementById('profileImage').src = window.URL.createObjectURL(this.files[0])" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                            </div>
+                            <div class="text-danger small">{{ form.profile_picture.errors }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h4><label for="{{ form.username.id_for_label }}" class="form-label mb-1">{{ form.username.label }}</label></h4>
+                            <hr class="mb-2">
+                            {{ form.username }}
+                            <div class="text-danger small">{{ form.username.errors }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h4><label for="{{ form.first_name.id_for_label }}" class="form-label mb-1">{{ form.first_name.label }}</label></h4>
+                            <hr class="my-2">
+                            {{ form.first_name }}
+                            <div class="text-danger small">{{ form.first_name.errors }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h4><label for="{{ form.last_name.id_for_label }}" class="form-label mb-1">{{ form.last_name.label }}</label></h4>
+                            <hr class="mb-2">
+                            {{ form.last_name }}
+                            <div class="text-danger small">{{ form.last_name.errors }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h4><label for="{{ form.email.id_for_label }}" class="form-label mb-1">{{ form.email.label }}</label></h4>
+                            <hr class="mb-2">
+                            {{ form.email }}
+                            <div class="text-danger small">{{ form.email.errors }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h4><label for="{{ form.profile_description.id_for_label }}" class="form-label mb-1">{{ form.profile_description.label }}</label></h4>
+                            <hr class="mb-2">
+                            {{ form.profile_description }}
+                            <div class="text-danger small">{{ form.profile_description.errors }}</div>
+                        </div>
+
+                        <button type="button" class="btn btn-outline-secondary w-100 mb-3" id="togglePasswordFields">
+                            Change Password
+                        </button>
+
+                        <div id="passwordFields" style="display: none;">
+                            <div class="mb-3" id="currentPasswordField" style="display: none;">
+                                <h4><label for="{{ form.current_password.id_for_label }}" class="form-label mb-1">{{ form.current_password.label }}</label></h4>
+                                <hr class="mb-2">
+                                <div class="input-group">
+                                    {{ form.current_password }}
+                                    <button type="button" class="btn btn-outline-secondary" id="toggleCurrentPassword">
+                                        <i class="bi bi-eye-slash" id="currentPasswordIcon"></i>
+                                    </button>
+                                </div>
+                                <div class="text-danger small">{{ form.current_password.errors }}</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <h4><label for="{{ form.new_password1.id_for_label }}" class="form-label mb-1">{{ form.new_password1.label }}</label></h4>
+                                <hr class="mb-2">
+                                <div class="input-group">
+                                    {{ form.new_password1 }}
+                                    <button type="button" class="btn btn-outline-secondary" id="toggleNewPassword1">
+                                        <i class="bi bi-eye-slash" id="passwordIcon1"></i>
+                                    </button>
+                                </div>
+                                <div class="text-danger small">{{ form.new_password1.errors }}</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <h4><label for="{{ form.new_password2.id_for_label }}" class="form-label mb-1">{{ form.new_password2.label }}</label></h4>
+                                <hr class="mb-2">
+                                <div class="input-group">
+                                    {{ form.new_password2 }}
+                                    <button type="button" class="btn btn-outline-secondary" id="toggleNewPassword2">
+                                        <i class="bi bi-eye-slash" id="passwordIcon2"></i>
+                                    </button>
+                                </div>
+                                <div class="text-danger small">{{ form.new_password2.errors }}</div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-dark btn-lg fw-light fs-3 w-100 shadow-sm">Update Profile</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const togglePasswordFields = document.querySelector('#togglePasswordFields');
+    const passwordFields = document.querySelector('#passwordFields');
+    const currentPasswordField = document.querySelector('#currentPasswordField');
+
+    togglePasswordFields.addEventListener('click', function () {
+        passwordFields.style.display = passwordFields.style.display === 'none' ? 'block' : 'none';
+        currentPasswordField.style.display = currentPasswordField.style.display === 'none' ? 'block' : 'none';
+    });
+
+    const toggleCurrentPassword = document.querySelector('#toggleCurrentPassword');
+    const currentPasswordFieldInput = document.querySelector('#id_current_password');
+    const currentPasswordIcon = document.querySelector('#currentPasswordIcon');
+
+    toggleCurrentPassword.addEventListener('click', function () {
+        const type = currentPasswordFieldInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        currentPasswordFieldInput.setAttribute('type', type);
+        currentPasswordIcon.classList.toggle('bi-eye');
+        currentPasswordIcon.classList.toggle('bi-eye-slash');
+    });
+
+    const toggleNewPassword1 = document.querySelector('#toggleNewPassword1');
+    const newPasswordField1 = document.querySelector('#id_new_password1');
+    const passwordIcon1 = document.querySelector('#passwordIcon1');
+
+    toggleNewPassword1.addEventListener('click', function () {
+        const type = newPasswordField1.getAttribute('type') === 'password' ? 'text' : 'password';
+        newPasswordField1.setAttribute('type', type);
+        passwordIcon1.classList.toggle('bi-eye');
+        passwordIcon1.classList.toggle('bi-eye-slash');
+    });
+
+    const toggleNewPassword2 = document.querySelector('#toggleNewPassword2');
+    const newPasswordField2 = document.querySelector('#id_new_password2');
+    const passwordIcon2 = document.querySelector('#passwordIcon2');
+
+    toggleNewPassword2.addEventListener('click', function () {
+        const type = newPasswordField2.getAttribute('type') === 'password' ? 'text' : 'password';
+        newPasswordField2.setAttribute('type', type);
+        passwordIcon2.classList.toggle('bi-eye');
+        passwordIcon2.classList.toggle('bi-eye-slash');
+    });
+</script>
+
+{% endblock %}
