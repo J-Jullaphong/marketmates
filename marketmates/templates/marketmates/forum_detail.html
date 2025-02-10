@@ -15,15 +15,17 @@
                     <ul class="list-group">
                         {% for tag in tags %}
                             <li class="list-group-item border-0 d-flex align-items-center">
-                                <span class="badge bg-primary me-2">#{{ tag.tag_name }}</span>
-                                <small class="text-muted">{{ tag.forum_set.count }} Posts</small>
+                                <a href="{% url 'marketmates:search_forums' %}?q=%23{{ tag.tag_name }}"
+                                   class="text-decoration-none">
+                                    <span class="badge bg-primary me-2">#{{ tag.tag_name }}</span>
+                                </a>
+                                <small class="text-muted">{{ tag.forum_count }} Posts</small>
                             </li>
                         {% empty %}
                             <p class="text-muted">No tags available.</p>
                         {% endfor %}
                     </ul>
                 </section>
-
                 <section>
                     <h5 class="fw-bold text-primary">Private Groups</h5>
                     <ul class="list-group">

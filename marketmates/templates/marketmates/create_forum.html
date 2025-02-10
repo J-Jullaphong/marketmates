@@ -1,0 +1,61 @@
+{% extends "marketmates/base.html" %}
+{% load static %}
+
+{% block header %}
+    {{ form.media }}
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Left Sidebar: Popular Tags & Private Groups -->
+            <aside class="col-lg-3 sticky-sidebar">
+                <section class="mb-4">
+                    <h5 class="fw-bold text-primary">Popular Tags</h5>
+                    <ul class="list-group">
+                        {% for tag in tags %}
+                            <li class="list-group-item border-0 d-flex align-items-center">
+                                <a href="{% url 'marketmates:search_forums' %}?q=%23{{ tag.tag_name }}"
+                                   class="text-decoration-none">
+                                    <span class="badge bg-primary me-2">#{{ tag.tag_name }}</span>
+                                </a>
+                                <small class="text-muted">{{ tag.forum_count }} Posts</small>
+                            </li>
+                        {% empty %}
+                            <p class="text-muted">No tags available.</p>
+                        {% endfor %}
+                    </ul>
+                </section>
+                <section>
+                    <h5 class="fw-bold text-primary">Private Groups</h5>
+                    <ul class="list-group">
+                        {% for group in private_groups %}
+                            <li class="list-group-item border-0">
+                                <i class="bi bi-people-fill text-secondary"></i>
+                                <strong>{{ group.name }}</strong> ({{ group.members.count }} members)
+                            </li>
+                        {% empty %}
+                            <p class="text-muted">No private groups available.</p>
+                        {% endfor %}
+                    </ul>
+                </section>
+            </aside>
+
+            <!-- Main Content: Create Forum Form -->
+            <main class="col-lg-6">
+                <h2 class="mb-3">Create a New Forum Post</h2>
+
+                <form method="POST" enctype="multipart/form-data" class="card p-4 shadow-sm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        {{ form.as_p }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Post</button>
+                </form>
+            </main>
+        </div>
+
+        <!-- Right Sidebar: Empty-->
+        <div class="col-lg-3"></div>
+    </div>
+{% endblock %}

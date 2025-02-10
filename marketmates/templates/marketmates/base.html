@@ -53,9 +53,10 @@
             </ul>
 
             <!-- Centered Search Bar -->
-            <form class="d-flex mx-auto w-50">
+            <form class="d-flex mx-auto w-50" action="{% url 'marketmates:search_forums' %}" method="GET">
                 <div class="input-group">
-                    <input type="text" class="form-control" placeholder="Type here to search..." aria-label="Search">
+                    <input type="text" name="q" class="form-control" placeholder="Search for forums..."
+                           aria-label="Search" value="{{ query }}">
                     <button class="btn btn-light" type="submit">
                         <i class="fas fa-search"></i>
                     </button>
