@@ -11,6 +11,8 @@ urlpatterns = [
     path("create-forum/", CreateForumView.as_view(), name="create_forum"),
     path("search-forums/", SearchForumView.as_view(), name="search_forums"),
     path("market/", MarketUpdateView.as_view(), name="market_update"),
+    path("chat/", ChatRoomListView.as_view(), name="chat_room_list"),
+    path("chat/<uuid:room_id>/", ChatRoomView.as_view(), name="chat_room_page"),
 
     path("login/", LoginView.as_view(), name="login"),
     path('logout/', LogoutView.as_view(), name='logout'),

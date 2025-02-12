@@ -1,0 +1,189 @@
+{% extends 'marketmates/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3 text-center">My Chat Rooms</h2>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm p-4 mb-4">
+                <h5 class="d-flex justify-content-between align-items-center">
+                    Chat Rooms
+                    <button class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#createChatRoomModal" style="color: #5D5FEF;">
+                        <i class="bi bi-plus-circle" style="font-size: 1.5rem;"></i>
+                    </button>
+                </h5>
+                <div class="mb-3">
+                    <input type="text" id="searchChatRooms" class="form-control" placeholder="Search for a chat room...">
+                </div>
+                {% if chatrooms %}
+                    <ul class="list-group">
+                        {% for chat_room in chatrooms %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <a href="{% url 'marketmates:chat_room_page' chat_room.id %}" class="text-decoration-none">
+                                        <strong>{{ chat_room.name }}</strong>
+                                    </a>
+                                    <div class="text-muted" style="font-size: 0.9rem;">
+=                                        {% with chat_room.id as room_id %}
+                                            {% for message in last_messages %}
+                                                {% if message.chat_room.id == room_id %}
+                                                    <em>{{ message.text|truncatewords:5 }}</em>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endwith %}
+                                    </div>
+                                </div>
+                                <span class="text-muted">Members: {{ chat_room.members.count }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted text-center">You are not a member of any chat rooms.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="modal fade" id="createChatRoomModal" tabindex="-1" aria-labelledby="createChatRoomModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="createChatRoomModalLabel">Create a New Chat Room</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form method="POST">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="id_name" class="form-label">Chat Room Name</label>
+                                    {{ form.name }}
+                                    <div class="form-text">Choose a name for your chat room.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="id_capacity" class="form-label">Capacity</label>
+                                    {{ form.capacity }}
+                                    <div class="form-text">Set the maximum number of members allowed.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="id_members" class="form-label">Members</label>
+                                    <input type="text" id="searchMembers" class="form-control" placeholder="Search for members...">
+                                    <ul id="memberSuggestions" class="list-group mt-2" style="display: none;">
+                                    </ul>
+                                    <div id="selectedMembers" class="mt-3">
+                                        <strong>Selected Members:</strong>
+                                        <input type="hidden" name="members" id="selectedMembersInput">
+                                        <ul class="list-group" id="selectedMembersList"></ul>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">Create Chat Room</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById('createChatRoomModal');
+        const form = modal.querySelector('form');
+        const searchInput = document.getElementById('searchMembers');
+        const suggestionsList = document.getElementById('memberSuggestions');
+        const selectedMembersList = document.getElementById('selectedMembersList');
+        const selectedMembersInput = document.getElementById('selectedMembersInput');
+
+        const allUsers = JSON.parse('{{ users_json|escapejs }}');
+        let selectedMemberIds = [];
+
+        function resetForm() {
+            form.reset();
+            selectedMemberIds = [];
+            selectedMembersList.innerHTML = '';
+            selectedMembersInput.value = '';
+        }
+
+        modal.addEventListener('hidden.bs.modal', function () {
+            resetForm();
+        });
+
+        searchInput.addEventListener('input', function () {
+            const query = searchInput.value.trim();
+            if (query === '') {
+                suggestionsList.style.display = 'none';
+            }
+        });
+
+        function updateSelectedMembersInput() {
+            selectedMembersInput.value = selectedMemberIds.join(','); // Store as a comma-separated string
+        }
+
+        function displaySuggestions(query) {
+            suggestionsList.innerHTML = '';
+            const filteredUsers = allUsers.filter(user =>
+                user.username.toLowerCase().includes(query.toLowerCase())
+            );
+
+            filteredUsers.forEach(user => {
+                if (selectedMemberIds.includes(user.id)) return;
+
+                const listItem = document.createElement('li');
+                listItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+                listItem.textContent = user.username;
+
+                const tickIcon = document.createElement('i');
+                tickIcon.classList.add('bi', 'bi-check', 'text-success');
+                listItem.appendChild(tickIcon);
+
+                listItem.addEventListener('click', function () {
+                    addMemberToSelected(user);
+                    searchInput.value = '';
+                    suggestionsList.style.display = 'none';
+                });
+
+                suggestionsList.appendChild(listItem);
+            });
+
+            suggestionsList.style.display = filteredUsers.length > 0 ? 'block' : 'none';
+        }
+
+        function addMemberToSelected(user) {
+            if (selectedMemberIds.includes(user.id)) return;
+
+            selectedMemberIds.push(user.id);
+            updateSelectedMembersInput();
+
+            const listItem = document.createElement('li');
+            listItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+            listItem.textContent = user.username;
+
+            const removeButton = document.createElement('button');
+            removeButton.classList.add('btn', 'btn-sm', 'btn-danger');
+            removeButton.textContent = 'Remove';
+            removeButton.addEventListener('click', function () {
+                selectedMemberIds = selectedMemberIds.filter(id => id !== user.id);
+                updateSelectedMembersInput();
+                selectedMembersList.removeChild(listItem);
+            });
+
+            listItem.appendChild(removeButton);
+            selectedMembersList.appendChild(listItem);
+        }
+
+        searchInput.addEventListener('input', function () {
+            const query = searchInput.value;
+            displaySuggestions(query);
+        });
+    });
+</script>
+
+{% endblock %}
+{% endblock %}

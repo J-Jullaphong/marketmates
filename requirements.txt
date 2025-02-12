@@ -1,9 +1,14 @@
 Django
-django-ckeditor-5
+django-ckeditor-5==0.2.15
 django-storages
 python-decouple
 psycopg2-binary
 boto3
+channels
+botocore
+channels_redis
+bs4
+daphne
 selenium
 pandas
 yfinance

@@ -37,10 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
     'django.contrib.staticfiles',
     'marketmates.apps.MarketmatesConfig',
     'django_ckeditor_5',
     'storages',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -199,3 +201,11 @@ CACHES = {
         },
     }
 }
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
+
+ASGI_APPLICATION = "mysite.asgi.application"
