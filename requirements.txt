@@ -4,3 +4,9 @@ django-storages
 python-decouple
 psycopg2-binary
 boto3
+selenium
+pandas
+yfinance
+celery
+redis
+django-redis

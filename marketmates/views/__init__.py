@@ -6,4 +6,5 @@ from .login_view import LoginView
 from .profile_view import ProfileView
 from .registration_form_view import RegistrationFormView
 from .search_forum import SearchForumView
+from .market_update_view import MarketUpdateView
 from .unavailable_view import UnavailableView

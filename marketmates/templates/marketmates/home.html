@@ -45,20 +45,92 @@
             <main class="col-lg-6">
                 <section class="card shadow-sm border-0 mb-4">
                     <div class="card-body">
-                        <h5 class="fw-bold text-primary">Market Update →</h5>
+                        <h5 class="fw-bold text-primary"><a href="{% url 'marketmates:market_update' %}" class="text-decoration-none">Market Update →</a></h5>
                         <div class="d-flex justify-content-between align-items-center">
-                            <p><strong>SET Index:</strong> <span class="text-danger">1,352.95</span> (-0.65%)</p>
-                            <button class="btn btn-sm btn-outline-primary">View Details</button>
+                            <p><strong>SET Index:</strong> <span>{{ latest_close|floatformat:2 }} THB</span> (
+                                {% if percent_change < 0 %}
+                                    <span class="text-danger">{{ percent_change|floatformat:2 }}%</span>
+                                {% else %}
+                                    <span class="text-success">+{{ percent_change|floatformat:2 }}%</span>
+                                {% endif %}
+                            )</p>
                         </div>
-                        <p class="mb-2"><strong>Most Active Stocks:</strong></p>
-                        <ul class="list-inline mb-0">
-                            <li class="list-inline-item"><span class="badge bg-danger">TTB: 1.88 (-1.05%)</span></li>
-                            <li class="list-inline-item"><span class="badge bg-success">CCET: 9.15 (+6.78%)</span></li>
-                            <li class="list-inline-item"><span class="badge bg-danger">EA: 3.00 (-0.68%)</span></li>
-                        </ul>
+
+                        <!-- Data Sections -->
+                        <div class="card p-3">
+                            <div class="mb-3">
+                                <select id="dataSelect" class="form-select" onchange="updateData()">
+                                    <option value="most_active_by_value">Most Active by Value</option>
+                                    <option value="most_active_by_volume">Most Active by Volume</option>
+                                    <option value="top_gainers">Top Gainers</option>
+                                    <option value="top_losers">Top Losers</option>
+                                </select>
+                            </div>
+
+                            <!-- Most Active by Value -->
+                            <div id="most_active_by_value" class="data-section" style="display:block;">
+                                <div class="card-body">
+                                    <ul class="list-inline mb-0 d-flex overflow-x-auto">
+                                        {% for row in most_active_value.values %}
+                                            <li class="list-inline-item me-3">
+                                                <span class="badge {% if row.2|stringformat:'s'|default:''|slice:':1' == '+' %}bg-success{% elif row.2|stringformat:'s'|default:''|slice:':1' == '-' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                                    {{ row.0 }}: {{ row.1 }} ({{ row.2 }})
+                                                </span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Most Active by Volume -->
+                            <div id="most_active_by_volume" class="data-section" style="display:none;">
+                                <div class="card-body">
+                                    <ul class="list-inline mb-0 d-flex overflow-x-auto">
+                                        {% for row in most_active_volume.values %}
+                                            <li class="list-inline-item me-3">
+                                                <span class="badge {% if row.2|stringformat:'s'|default:''|slice:':1' == '+' %}bg-success{% elif row.2|stringformat:'s'|default:''|slice:':1' == '-' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                                    {{ row.0 }}: {{ row.1 }} ({{ row.2 }})
+                                                </span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Top Gainers -->
+                            <div id="top_gainers" class="data-section" style="display:none;">
+                                <div class="card-body">
+                                    <ul class="list-inline mb-0 d-flex overflow-x-auto">
+                                        {% for row in top_gainer.values %}
+                                            <li class="list-inline-item me-3">
+                                                <span class="badge bg-success">
+                                                    {{ row.0 }}: {{ row.1 }} ({{ row.2 }})
+                                                </span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Top Losers -->
+                            <div id="top_losers" class="data-section" style="display:none;">
+                                <div class="card-body">
+                                    <ul class="list-inline mb-0 d-flex overflow-x-auto">
+                                        {% for row in top_loser.values %}
+                                            <li class="list-inline-item me-3">
+                                                <span class="badge bg-danger">
+                                                    {{ row.0 }}: {{ row.1 }} ({{ row.2 }})
+                                                </span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
+                <!-- Post Creation Form -->
                 <section class="mb-3">
                     <form id="quickPostForm" action="{% url 'marketmates:create_forum' %}" method="GET">
                         <div class="input-group shadow-sm">
@@ -69,7 +141,6 @@
                         </div>
                     </form>
                 </section>
-
 
                 {% for forum in forums %}
                     <article class="card shadow-sm border-0 mb-3">
@@ -115,7 +186,6 @@
                         </div>
                     </article>
                 {% endfor %}
-
             </main>
 
             <!-- Right Sidebar: Announcements -->
@@ -131,18 +201,24 @@
                 <div class="card border-0 shadow-sm mb-2">
                     <div class="card-body">
                         <h6 class="card-title fw-bold">💡 Investment Strategies</h6>
-                        <p class="text-muted small">Learn about long-term and short-term trading strategies.</p>
-                        <a href="#" class="btn btn-sm btn-outline-primary">Explore</a>
+                        <p class="text-muted small">Learn about long-term and short-term strategies for better returns.</p>
+                        <a href="#" class="btn btn-sm btn-outline-primary">Read More</a>
                     </div>
                 </div>
             </aside>
-
         </div>
     </div>
+
     <script>
+        function updateData() {
+            const selectedOption = document.getElementById("dataSelect").value;
+            const sections = document.querySelectorAll(".data-section");
+            sections.forEach(section => section.style.display = "none");
+            document.getElementById(selectedOption).style.display = "block";
+        }
+
         function submitOnEnter(event) {
             if (event.key === "Enter") {
-                event.preventDefault();
                 document.getElementById("quickPostForm").submit();
             }
         }
