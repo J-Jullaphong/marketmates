@@ -20,3 +20,14 @@ class Forum(models.Model):
         soup = BeautifulSoup(self.description, "html.parser")
         img_tag = soup.find("img")
         return img_tag["src"] if img_tag else None
+
+    def get_images(self):
+        soup = BeautifulSoup(self.description, "html.parser")
+        img_tags = soup.find_all("img")
+        return [img["src"] for img in img_tags if "src" in img.attrs]
+
+    def get_formatted_content(self):
+        soup = BeautifulSoup(self.description, "html.parser")
+        for img in soup.find_all("img"):
+            img.decompose()
+        return str(soup)

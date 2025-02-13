@@ -120,7 +120,6 @@
 
         chatSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
-            console.log(data);
 
             if (data.previous_messages) {
                 chatMessagesContainer.innerHTML = "";

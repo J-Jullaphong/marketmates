@@ -13,17 +13,14 @@ class ForumDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["comments"] = Comment.objects.filter(forum=self.object).order_by("-created_at")
-        context["tags"] = Tag.objects.annotate(
-            forum_count=Count("forum")
-        ).order_by("-forum_count")[:5]
+        context["comments"] = Comment.objects.filter(forum=self.object).order_by("created_at")
+        context["tags"] = Tag.objects.annotate(forum_count=Count("forum")).order_by("-forum_count")[:5]
         context["form"] = CommentForm()
         return context
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        form = CommentForm(request.POST)
-
+        form = CommentForm(request.POST, request.FILES)
         if form.is_valid():
             comment = form.save(commit=False)
             comment.forum = self.object

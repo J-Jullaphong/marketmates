@@ -8,7 +8,7 @@ class ForumForm(forms.ModelForm):
         max_length=255,
         required=False,
         help_text="Enter tags separated by commas.",
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "e.g. trading, investment, crypto"})
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "e.g. trading, investment, หุ้นน่าสนใจ"})
     )
 
     class Meta:

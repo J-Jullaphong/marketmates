@@ -13,7 +13,8 @@
                             <li class="list-group-item border-0 d-flex align-items-center">
                                 <a href="{% url 'marketmates:search_forums' %}?q=%23{{ tag.tag_name }}"
                                    class="text-decoration-none">
-                                    <span class="badge bg-primary me-2">#{{ tag.tag_name }}</span>
+                                    <span class="badge me-2"
+                                          style="background-color: #5D5FEF;">#{{ tag.tag_name }}</span>
                                 </a>
                                 <small class="text-muted">{{ tag.forum_count }} Posts</small>
                             </li>
@@ -113,8 +114,9 @@
                                     <!-- Forum Tags -->
                                     <div class="d-flex flex-wrap">
                                         {% for tag in forum.tags.all|slice:":3" %}
-                                            <a href="{% url 'marketmates:search_forums' %}?q=%23{{ tag.tag_name }}"
-                                               class="badge bg-primary text-white me-1 text-decoration-none">#{{ tag.tag_name }}</a>
+                                            <a style="background-color: #5D5FEF; href="
+                                               {% url 'marketmates:search_forums' %}?q=%23{{ tag.tag_name }}"
+                                               class="badge text-white me-1 text-decoration-none">#{{ tag.tag_name }}</a>
                                         {% endfor %}
                                     </div>
                                 </div>

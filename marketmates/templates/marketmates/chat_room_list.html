@@ -25,7 +25,7 @@
                                         <strong>{{ chat_room.name }}</strong>
                                     </a>
                                     <div class="text-muted" style="font-size: 0.9rem;">
-=                                        {% with chat_room.id as room_id %}
+                                         {% with chat_room.id as room_id %}
                                             {% for message in last_messages %}
                                                 {% if message.chat_room.id == room_id %}
                                                     <em>{{ message.text|truncatewords:5 }}</em>
