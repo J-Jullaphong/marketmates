@@ -15,7 +15,7 @@
                     <ul class="list-group">
                         {% for tag in tags %}
                             <li class="list-group-item border-0 d-flex align-items-center">
-                                <a href="{% url 'marketmates:search_forums' %}?q=%23{{ tag.tag_name }}"
+                                <a href="{% url 'marketmates:forum_list' %}?q=%23{{ tag.tag_name }}"
                                    class="text-decoration-none">
                                     <span class="badge me-2" style="background-color: #5D5FEF;">#{{ tag.tag_name }}</span>
                                 </a>
@@ -26,11 +26,12 @@
                         {% endfor %}
                     </ul>
                 </section>
+
                 <section>
                     <h5 class="fw-bold text-primary">Private Groups</h5>
                     <ul class="list-group">
                         {% for group in private_groups %}
-                            <li class="list-group-item border-0">
+                            <li class="list-group-item">
                                 <i class="bi bi-people-fill text-secondary"></i>
                                 <strong>{{ group.name }}</strong> ({{ group.members.count }} members)
                             </li>
@@ -45,82 +46,123 @@
             <main class="col-lg-6">
                 <section class="card shadow-sm border-0 mb-4">
                     <div class="card-body">
-                        <h5 class="fw-bold text-primary"><a href="{% url 'marketmates:market_update' %}" class="text-decoration-none">Market Update →</a></h5>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <p><strong>SET Index:</strong> <span>{{ latest_close|floatformat:2 }} THB</span> (
-                                {% if percent_change < 0 %}
-                                    <span class="text-danger">{{ percent_change|floatformat:2 }}%</span>
-                                {% else %}
-                                    <span class="text-success">+{{ percent_change|floatformat:2 }}%</span>
-                                {% endif %}
-                            )</p>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold text-primary m-0">
+                                <a href="{% url 'marketmates:market_update' %}" class="text-decoration-none">Market
+                                    Update</a>
+                            </h5>
+                            <a href="{% url 'marketmates:market_update' %}" class="btn btn-sm btn-outline-primary">View
+                                More</a>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between p-4 rounded-3 shadow-sm">
+                            <div class="d-flex flex-column">
+                                <p class="mb-0 fw-bold text-dark fs-4">SET Index {{ latest_close|floatformat:2 }} <span
+                                        class="text-muted fs-6"></span></p>
+                                <p class="mb-0 text-muted small">Last Update | {{ last_update }}</p>
+                            </div>
+                            <div class="text-end d-flex flex-column align-items-end">
+                                <span class="fw-bold fs-5 {% if percent_change < 0 %}text-danger{% else %}text-success{% endif %}">
+                                    {{ change_value|floatformat:2 }}</span>
+                                <span class="badge {% if percent_change < 0 %}bg-danger{% else %}bg-success{% endif %} text-white mt-1"
+                                      style="font-size: 0.9rem; padding: 0.4rem 0.8rem; border-radius: 8px;">
+                                    {% if percent_change < 0 %}{{ percent_change|floatformat:2 }}%{% else %}+
+                                        {{ percent_change|floatformat:2 }}%{% endif %}</span>
+                            </div>
                         </div>
 
-                        <!-- Data Sections -->
-                        <div class="card p-3">
-                            <div class="mb-3">
-                                <select id="dataSelect" class="form-select" onchange="updateData()">
-                                    <option value="most_active_by_value">Most Active by Value</option>
-                                    <option value="most_active_by_volume">Most Active by Volume</option>
-                                    <option value="top_gainers">Top Gainers</option>
-                                    <option value="top_losers">Top Losers</option>
-                                </select>
-                            </div>
-
-                            <!-- Most Active by Value -->
-                            <div id="most_active_by_value" class="data-section" style="display:block;">
-                                <div class="card-body">
-                                    <ul class="list-inline mb-0 d-flex overflow-x-auto">
-                                        {% for row in most_active_value.values %}
-                                            <li class="list-inline-item me-3">
-                                                <span class="badge {% if row.2|stringformat:'s'|default:''|slice:':1' == '+' %}bg-success{% elif row.2|stringformat:'s'|default:''|slice:':1' == '-' %}bg-danger{% else %}bg-secondary{% endif %}">
-                                                    {{ row.0 }}: {{ row.1 }} ({{ row.2 }})
-                                                </span>
+                        <!-- Scrollable Data Cards -->
+                        <div class="overflow-auto" style="white-space: nowrap;">
+                            <div class="d-flex flex-nowrap gap-3 pt-2 pb-2">
+                                <!-- Most Active by Value -->
+                                <div class="card h-100 shadow-lg border-0 p-3 rounded-4" style="min-width: 300px;">
+                                    <h6 class="fw-bold text-primary">Most Active by Value</h6>
+                                    <div class="d-flex fw-semibold text-muted border-bottom"
+                                         style="font-size: 0.85rem;">
+                                        <span style="width: 33%;">หลักทรัพย์</span>
+                                        <span class="text-center" style="width: 25%;">ล่าสุด</span>
+                                        <span class="text-end" style="width: 40%;">เปลี่ยนแปลง</span>
+                                    </div>
+                                    <ul class="list-unstyled mt-2 mb-0">
+                                        {% for row in most_active_value.values|slice:":5" %}
+                                            <li class="small text-muted d-flex justify-content-between align-items-center border-bottom py-1">
+                                                <span class="fw-bold text-dark"
+                                                      style="min-width: 30%;">{{ row.0 }}</span>
+                                                <span class="text-center {% if row.2|stringformat:'s'|slice:':1' == '-' %}text-danger{% else %}text-success{% endif %}"
+                                                      style="min-width: 25%;">{{ row.1 }}</span>
+                                                <span class="text-end {% if row.2|stringformat:'s'|slice:':1' == '-' %}text-danger{% else %}text-success{% endif %}"
+                                                      style="min-width: 35%;">{{ row.2 }}</span>
                                             </li>
                                         {% endfor %}
                                     </ul>
                                 </div>
-                            </div>
 
-                            <!-- Most Active by Volume -->
-                            <div id="most_active_by_volume" class="data-section" style="display:none;">
-                                <div class="card-body">
-                                    <ul class="list-inline mb-0 d-flex overflow-x-auto">
-                                        {% for row in most_active_volume.values %}
-                                            <li class="list-inline-item me-3">
-                                                <span class="badge {% if row.2|stringformat:'s'|default:''|slice:':1' == '+' %}bg-success{% elif row.2|stringformat:'s'|default:''|slice:':1' == '-' %}bg-danger{% else %}bg-secondary{% endif %}">
-                                                    {{ row.0 }}: {{ row.1 }} ({{ row.2 }})
-                                                </span>
+                                <!-- Most Active by Volume -->
+                                <div class="card h-100 shadow-lg border-0 p-3 rounded-4" style="min-width: 300px;">
+                                    <h6 class="fw-bold text-primary">Most Active by Volume</h6>
+                                    <div class="d-flex fw-semibold text-muted border-bottom"
+                                         style="font-size: 0.85rem;">
+                                        <span style="width: 33%;">หลักทรัพย์</span>
+                                        <span class="text-center" style="width: 25%;">ล่าสุด</span>
+                                        <span class="text-end" style="width: 40%;">เปลี่ยนแปลง</span>
+                                    </div>
+                                    <ul class="list-unstyled mt-2 mb-0">
+                                        {% for row in most_active_volume.values|slice:":5" %}
+                                            <li
+                                                    class="small text-muted d-flex justify-content-between align-items-center border-bottom py-1">
+                                                <span class="fw-bold text-dark"
+                                                      style="min-width: 30%;">{{ row.0 }}</span>
+                                                <span class="text-center {% if row.2|stringformat:'s'|slice:':1' == '-' %}text-danger{% else %}text-success{% endif %}"
+                                                      style="min-width: 25%;">{{ row.1 }}</span>
+                                                <span class="text-end {% if row.2|stringformat:'s'|slice:':1' == '-' %}text-danger{% else %}text-success{% endif %}"
+                                                      style="min-width: 35%;">{{ row.2 }}</span>
                                             </li>
                                         {% endfor %}
                                     </ul>
                                 </div>
-                            </div>
 
-                            <!-- Top Gainers -->
-                            <div id="top_gainers" class="data-section" style="display:none;">
-                                <div class="card-body">
-                                    <ul class="list-inline mb-0 d-flex overflow-x-auto">
-                                        {% for row in top_gainer.values %}
-                                            <li class="list-inline-item me-3">
-                                                <span class="badge bg-success">
-                                                    {{ row.0 }}: {{ row.1 }} ({{ row.2 }})
-                                                </span>
+                                <!-- Top Gainers -->
+                                <div class="card h-100 shadow-lg border-0 p-3 rounded-4" style="min-width: 300px;">
+                                    <h6 class="fw-bold text-success">Top Gainers</h6>
+                                    <div class="d-flex fw-semibold text-muted border-bottom"
+                                         style="font-size: 0.85rem;">
+                                        <span style="width: 33%;">หลักทรัพย์</span>
+                                        <span class="text-center" style="width: 25%;">ล่าสุด</span>
+                                        <span class="text-end" style="width: 40%;">เปลี่ยนแปลง</span>
+                                    </div>
+                                    <ul class="list-unstyled mt-2 mb-0">
+                                        {% for row in top_gainer.values|slice:":5" %}
+                                            <li
+                                                    class="small text-muted d-flex justify-content-between align-items-center border-bottom py-1">
+                                                <span class="fw-bold text-dark"
+                                                      style="min-width: 30%;">{{ row.0 }}</span>
+                                                <span class="text-center text-success"
+                                                      style="min-width: 25%;">{{ row.1 }}</span>
+                                                <span class="text-end text-success"
+                                                      style="min-width: 35%;">{{ row.2 }}</span>
                                             </li>
                                         {% endfor %}
                                     </ul>
                                 </div>
-                            </div>
 
-                            <!-- Top Losers -->
-                            <div id="top_losers" class="data-section" style="display:none;">
-                                <div class="card-body">
-                                    <ul class="list-inline mb-0 d-flex overflow-x-auto">
-                                        {% for row in top_loser.values %}
-                                            <li class="list-inline-item me-3">
-                                                <span class="badge bg-danger">
-                                                    {{ row.0 }}: {{ row.1 }} ({{ row.2 }})
-                                                </span>
+                                <!-- Top Losers -->
+                                <div class="card h-100 shadow-lg border-0 p-3 rounded-4" style="min-width: 300px;">
+                                    <h6 class="fw-bold text-danger">Top Losers</h6>
+                                    <div class="d-flex fw-semibold text-muted border-bottom"
+                                         style="font-size: 0.85rem;">
+                                        <span style="width: 33%;">หลักทรัพย์</span>
+                                        <span class="text-center" style="width: 25%;">ล่าสุด</span>
+                                        <span class="text-end" style="width: 40%;">เปลี่ยนแปลง</span>
+                                    </div>
+                                    <ul class="list-unstyled mt-2 mb-0">
+                                        {% for row in top_loser.values|slice:":5" %}
+                                            <li
+                                                    class="small text-muted d-flex justify-content-between align-items-center border-bottom py-1">
+                                                <span class="fw-bold text-dark"
+                                                      style="min-width: 30%;">{{ row.0 }}</span>
+                                                <span class="text-center text-danger"
+                                                      style="min-width: 25%;">{{ row.1 }}</span>
+                                                <span class="text-end text-danger"
+                                                      style="min-width: 35%;">{{ row.2 }}</span>
                                             </li>
                                         {% endfor %}
                                     </ul>
@@ -131,13 +173,15 @@
                 </section>
 
                 <!-- Post Creation Form -->
-                <section class="mb-3">
+                <section class="mb-4">
                     <form id="quickPostForm" action="{% url 'marketmates:create_forum' %}" method="GET">
-                        <div class="input-group shadow-sm">
+                        <div class="input-group shadow-sm rounded-pill">
                             <input type="text" id="quickPostInput" name="prefill_text"
-                                   class="form-control rounded-start-pill"
+                                   class="form-control border-0 rounded-start-pill px-3"
                                    placeholder="What's on your mind?" onkeypress="submitOnEnter(event)">
-                            <button type="submit" class="btn btn-primary rounded-end-pill">Create Post</button>
+                            <button type="submit" class="btn btn-primary rounded-end-pill">
+                                <i class="bi bi-pencil-square me-2"></i> Create Post
+                            </button>
                         </div>
                     </form>
                 </section>
@@ -167,21 +211,36 @@
                                         {{ forum.title }}
                                     </a>
                                 </h5>
-
-                                <!-- Meta Info: Created By, Date, Comment Count -->
-                                <p class="small text-muted mb-2">
-                                    🧑 <strong>{{ forum.created_by.username }}</strong> &bull;
-                                    📅 {{ forum.created_at|date:"M d, Y" }} &bull;
-                                    💬 {{ forum.comment_set.count }} Comments
+                                <p class="text-muted small mt-1" style="font-size: 0.75rem;">
+                                    {% if forum.created_by.profile_picture %}
+                                        <img src="{{ forum.created_by.profile_picture.url }}"
+                                             alt="{{ forum.created_by.username }}"
+                                             class="rounded-circle me-1"
+                                             style="width: 20px; height: 20px; object-fit: cover;">
+                                    {% else %}
+                                        <i class="bi bi-person-circle text-secondary fs-6 me-1"></i>
+                                    {% endif %}
+                                    <strong>{{ forum.created_by.username }}</strong> &bull;
+                                    <i class="bi bi-calendar text-secondary me-1"></i> {{ forum.created_at|date:"M d, Y" }}
                                 </p>
 
-                                <!-- Forum Tags -->
-                                <div class="d-flex flex-wrap">
-                                    {% for tag in forum.tags.all|slice:":3" %}
-                                        <a style="background-color: #5D5FEF; href="
-                                           {% url 'marketmates:search_forums' %}?q=%23{{ tag.tag_name }}"
-                                           class="badge text-white me-1 text-decoration-none">#{{ tag.tag_name }}</a>
-                                    {% endfor %}
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <!-- Forum Tags -->
+                                    <div class="d-flex flex-wrap">
+                                        {% for tag in forum.tags.all|slice:":3" %}
+                                            <a href="?q=%23{{ tag.tag_name }}"
+                                               class="badge text-white me-1 text-decoration-none"
+                                               style="background-color: #5D5FEF;">
+                                                #{{ tag.tag_name }}
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+
+                                    <!-- Comments Count  -->
+                                    <p class="text-muted small mb-0">
+                                        <i class="bi bi-chat-dots-fill text-secondary me-1"></i> {{ forum.comment_set.count }}
+                                        Comments
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -202,7 +261,8 @@
                 <div class="card border-0 shadow-sm mb-2">
                     <div class="card-body">
                         <h6 class="card-title fw-bold">💡 Investment Strategies</h6>
-                        <p class="text-muted small">Learn about long-term and short-term strategies for better returns.</p>
+                        <p class="text-muted small">Learn about long-term and short-term strategies for better
+                            returns.</p>
                         <a href="#" class="btn btn-sm btn-outline-primary">Read More</a>
                     </div>
                 </div>
@@ -225,3 +285,4 @@
         }
     </script>
 {% endblock %}
+
