@@ -46,7 +46,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link text-white">
+                    <a href="{% url 'marketmates:forum_list' %}" class="nav-link text-white">
                         <i class="bi bi-people-fill fs-4"></i>
                     </a>
                 </li>
@@ -58,7 +58,7 @@
             </ul>
 
             <!-- Centered Search Bar -->
-            <form class="d-flex mx-auto w-50" action="{% url 'marketmates:search_forums' %}" method="GET">
+            <form class="d-flex mx-auto w-50" action="{% url 'marketmates:forum_list' %}" method="GET">
                 <div class="input-group">
                     <input type="text" name="q" class="form-control" placeholder="Search for forums..."
                            aria-label="Search" value="{{ query }}">

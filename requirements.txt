@@ -11,7 +11,7 @@ bs4
 daphne
 selenium
 pandas
-yfinance
+yfinance==0.2.54
 celery
 redis
 django-redis

@@ -2,58 +2,83 @@
 {% load static %}
 
 {% block content %}
-  <div class="container mt-4">
-    <h1 class="text-center">Market Update</h1>
+  <style>
+    .custom-table {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+      border-collapse: separate;
+      border-spacing: 0;
+    }
 
-    <hr>
+    .custom-table th {
+      background: #f8f9fa;
+      font-weight: bold;
+      padding: 12px;
+    }
+
+    .custom-table td {
+      padding: 10px;
+      vertical-align: middle;
+    }
+
+    .custom-table tbody tr {
+      transition: all 0.2s ease-in-out;
+    }
+
+
+    .custom-table tbody tr:hover {
+      background: #f2f2f2;
+    }
+  </style>
+
+  <div class="container mt-5">
+    <h1 class="text-center mb-4" style="color: #5D5FEF;">Market Update</h1>
+    <hr class="my-4">
 
     <!-- SET Data -->
     <div class="row mb-4">
       <div class="col-md-12 text-center">
         <div class="d-flex justify-content-center align-items-center">
-          <h2 class="mr-3">SET - {{ latest_close|floatformat:2 }} THB</h2>
-          <h3 style="color:
-            {% if percent_change > 0 %}
-              green
-            {% elif percent_change < 0 %}
-              red
-            {% else %}
-              yellow
-            {% endif %};
-            margin-left: 10px;">(
-            {% if percent_change < 0 %}
-              {{ percent_change|floatformat:2 }}
-            {% else %}
-              +{{ percent_change|floatformat:2 }}
+          <h2 class="mr-3 text-dark">SET - {{ latest_close|floatformat:2 }} THB</h2>
+          <span class="badge
+            {% if percent_change > 0 %} bg-success
+            {% elif percent_change < 0 %} bg-danger
+            {% else %} bg-secondary
             {% endif %}
-            % )
-          </h3>
+            ms-3 fs-5">
+            {% if percent_change < 0 %}
+              {{ percent_change|floatformat:2 }}%
+            {% else %}
+              +{{ percent_change|floatformat:2 }}%
+            {% endif %}
+          </span>
         </div>
-        <p class="text-muted">
-          Last Update: {{ last_update }}
-        </p>
+        <p class="text-muted">Last Update: {{ last_update }}</p>
       </div>
     </div>
 
-    <!-- Line Chart for SET (Centered) -->
+
+    <!-- Line Chart -->
     <div class="row mb-4">
       <div class="col-md-12 d-flex justify-content-center">
         <canvas id="setChart"></canvas>
       </div>
     </div>
 
-    <hr>
+    <hr class="my-4">
 
-    <!-- Most Active by Value and Volume (2 tables per row) -->
+    <!-- Most Active by Value and Volume -->
     <div class="row mb-4">
       <!-- Most Active by Value -->
       <div class="col-md-6">
         <div class="table-responsive">
-          <h2 class="text-center">Most Active by Value</h2>
-          <table class="table table-bordered table-hover table-striped table-sm text-center">
-            <thead>
+          <h3 class="text-center text-dark mb-3">Most Active by Value</h3>
+          <table class="table table-bordered custom-table text-center">
+            <thead class="thead-light">
               <tr>
-                <th>#</th>
+                <th></th>
                 {% for header in most_active_value_columns %}
                   <th>{{ header }}</th>
                 {% endfor %}
@@ -64,7 +89,8 @@
                 <tr>
                   <td>{{ forloop.counter }}</td>
                   {% for cell in row %}
-                    <td class="{% if cell|stringformat:'s'|default:''|slice:':1' == '+' %}text-success{% elif cell|stringformat:'s'|default:''|slice:':1' == '-' %}text-danger{% endif %}">
+                    <td class="{% if cell|stringformat:'s'|slice:':1' == '+' %}text-success
+                               {% elif cell|stringformat:'s'|slice:':1' == '-' %}text-danger{% endif %}">
                       {{ cell }}
                     </td>
                   {% endfor %}
@@ -78,11 +104,11 @@
       <!-- Most Active by Volume -->
       <div class="col-md-6">
         <div class="table-responsive">
-          <h2 class="text-center">Most Active by Volume</h2>
-          <table class="table table-bordered table-hover table-striped table-sm text-center">
-            <thead>
+          <h3 class="text-center text-dark mb-3">Most Active by Volume</h3>
+          <table class="table table-bordered custom-table text-center">
+            <thead class="thead-light">
               <tr>
-                <th>#</th>
+                <th></th>
                 {% for header in most_active_volume_columns %}
                   <th>{{ header }}</th>
                 {% endfor %}
@@ -93,7 +119,8 @@
                 <tr>
                   <td>{{ forloop.counter }}</td>
                   {% for cell in row %}
-                    <td class="{% if cell|stringformat:'s'|default:''|slice:':1' == '+' %}text-success{% elif cell|stringformat:'s'|default:''|slice:':1' == '-' %}text-danger{% endif %}">
+                    <td class="{% if cell|stringformat:'s'|slice:':1' == '+' %}text-success
+                               {% elif cell|stringformat:'s'|slice:':1' == '-' %}text-danger{% endif %}">
                       {{ cell }}
                     </td>
                   {% endfor %}
@@ -105,18 +132,18 @@
       </div>
     </div>
 
-    <hr>
+    <hr class="my-4">
 
-    <!-- Top Gainers and Top Losers (2 tables per row) -->
+    <!-- Top Gainers and Top Losers -->
     <div class="row mb-4">
       <!-- Top Gainers -->
       <div class="col-md-6">
         <div class="table-responsive">
-          <h2 class="text-center">Top Gainers</h2>
-          <table class="table table-bordered table-hover table-striped table-sm text-center">
-            <thead>
+          <h3 class="text-center text-dark mb-3">Top Gainers</h3>
+          <table class="table table-bordered custom-table text-center">
+            <thead class="thead-light">
               <tr>
-                <th>#</th>
+                <th></th>
                 {% for header in top_gainer_columns %}
                   <th>{{ header }}</th>
                 {% endfor %}
@@ -127,7 +154,8 @@
                 <tr>
                   <td>{{ forloop.counter }}</td>
                   {% for cell in row %}
-                    <td class="{% if cell|stringformat:'s'|default:''|slice:':1' == '+' %}text-success{% elif cell|stringformat:'s'|default:''|slice:':1' == '-' %}text-danger{% endif %}">
+                    <td class="{% if cell|stringformat:'s'|slice:':1' == '+' %}text-success
+                               {% elif cell|stringformat:'s'|slice:':1' == '-' %}text-danger{% endif %}">
                       {{ cell }}
                     </td>
                   {% endfor %}
@@ -141,11 +169,11 @@
       <!-- Top Losers -->
       <div class="col-md-6">
         <div class="table-responsive">
-          <h2 class="text-center">Top Losers</h2>
-          <table class="table table-bordered table-hover table-striped table-sm text-center">
-            <thead>
+          <h3 class="text-center text-dark mb-3">Top Losers</h3>
+          <table class="table table-bordered custom-table text-center">
+            <thead class="thead-light">
               <tr>
-                <th>#</th>
+                <th></th>
                 {% for header in top_loser_columns %}
                   <th>{{ header }}</th>
                 {% endfor %}
@@ -156,7 +184,8 @@
                 <tr>
                   <td>{{ forloop.counter }}</td>
                   {% for cell in row %}
-                    <td class="{% if cell|stringformat:'s'|default:''|slice:':1' == '+' %}text-success{% elif cell|stringformat:'s'|default:''|slice:':1' == '-' %}text-danger{% endif %}">
+                    <td class="{% if cell|stringformat:'s'|slice:':1' == '+' %}text-success
+                               {% elif cell|stringformat:'s'|slice:':1' == '-' %}text-danger{% endif %}">
                       {{ cell }}
                     </td>
                   {% endfor %}
@@ -170,49 +199,39 @@
   </div>
 
   <!-- Chart.js Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    var ctx = document.getElementById('setChart').getContext('2d');
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      var ctx = document.getElementById('setChart').getContext('2d');
 
-    var labels = [{% for date in set_data.index %}"{{ date|date:"d-m-Y" }}"{% if not forloop.last %},{% endif %}{% endfor %}];
-    var closeData = [{% for close in set_data.Close %}{{ close }}{% if not forloop.last %},{% endif %}{% endfor %}];
+      var labels = [{% for date in set_data.index %}"{{ date|date:"d-m-Y" }}"{% if not forloop.last %},{% endif %}{% endfor %}];
+      var closeData = [{% for close in set_data.Close %}{{ close }}{% if not forloop.last %},{% endif %}{% endfor %}];
 
-    var setChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: closeData,
-          borderColor: {% if percent_change > 0 %}'rgba(75, 192, 192, 1)'{% else %}'rgba(255, 56, 92, 1)'{% endif %},
-          borderWidth: 2,
-          backgroundColor: {% if percent_change > 0 %}'rgba(75, 192, 192, 0.2)'{% else %}'rgba(255, 56, 92, 0.2)'{% endif %},
-          fill: true,
-          pointRadius: 0
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          x: {
-            type: 'category',
-            ticks: {
-              autoSkip: true,
-              maxRotation: 0
-            }
-          },
-          y: {
-            ticks: {
-              beginAtZero: false
-            }
-          }
+      var setChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: closeData,
+            borderColor: {% if percent_change > 0 %}'rgba(75, 192, 192, 1)'{% else %}'rgba(255, 56, 92, 1)'{% endif %},
+            borderWidth: 2,
+            backgroundColor: {% if percent_change > 0 %}'rgba(75, 192, 192, 0.2)'{% else %}'rgba(255, 56, 92, 0.2)'{% endif %},
+            fill: true,
+
+            // Show points on the line
+            pointRadius: 3,
+            pointHoverRadius: 6
+          }]
         },
-        plugins: {
-          legend: {
-            display: false
+        options: {
+          plugins: {
+            tooltip: { enabled: true },
+            legend: { display: false }
+          },
+          interaction: {
+            mode: 'index',
+            intersect: false
           }
         }
-      }
-    });
-  </script>
-
+      });
+    </script>
 {% endblock %}

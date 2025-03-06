@@ -15,7 +15,7 @@
                 <ul class="list-group">
                     {% for tag in tags %}
                         <li class="list-group-item border-0 d-flex align-items-center">
-                            <a href="{% url 'marketmates:search_forums' %}?q=%23{{ tag.tag_name }}"
+                            <a href="{% url 'marketmates:forum_list' %}?q=%23{{ tag.tag_name }}"
                                class="text-decoration-none">
                                 <span class="badge me-2" style="background-color: #5D5FEF;">#{{ tag.tag_name }}</span>
                             </a>
