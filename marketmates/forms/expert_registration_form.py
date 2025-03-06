@@ -7,9 +7,15 @@ from ..models import Expert, User
 
 class ExpertRegistrationForm(UserCreationForm):
     """Form for registering experts with a certification file."""
+    designation = forms.CharField(
+        required=True,
+        label="Designation",
+        help_text="For example: CFT, CMT, CEWA, etc.",
+        widget=forms.TextInput(attrs={'placeholder': 'Designation'})
+    )
     document = forms.FileField(
         required=True,
-        label="Expert Document",
+        label="Verification Document/Certificate",
         widget=forms.ClearableFileInput(attrs={'accept': 'application/pdf'})
     )
     usable_password = None
@@ -61,6 +67,8 @@ class ExpertRegistrationForm(UserCreationForm):
             user.username = f"{self.cleaned_data['first_name']} {self.cleaned_data['last_name']}"
             user.save()
 
-            Expert.objects.create(user=user, document=self.cleaned_data['document'])
+            Expert.objects.create(user=user,
+                                  designation=self.cleaned_data['designation'],
+                                  document=self.cleaned_data['document'])
 
         return user

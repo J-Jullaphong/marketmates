@@ -18,6 +18,7 @@ class UserRegistrationForm(UserCreationForm):
         }
         widgets = {
             'email': forms.EmailInput(attrs={'placeholder': 'Email'}),
+            'username': forms.TextInput(attrs={'placeholder': 'Username'}),
         }
 
     def __init__(self, *args, **kwargs):
