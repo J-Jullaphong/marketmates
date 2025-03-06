@@ -1,7 +1,10 @@
+import uuid
 import json
+import base64
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from .models import Message, ChatRoom, User
+from django.core.files.base import ContentFile
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -47,36 +50,44 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard(self.user_group_name, self.channel_name)
 
     async def receive(self, text_data):
-        """Handles receiving a message from WebSocket."""
+        """Handles receiving a message (text or image) from WebSocket."""
         text_data_json = json.loads(text_data)
         message_text = text_data_json.get('message')
+        image_data = text_data_json.get('image')
 
-        if not message_text:
-            return
+        new_message = None
 
-        new_message = await self.save_message(message_text)
-        if not new_message:
-            return
+        if message_text or image_data:
+            new_message = await self.save_message(message_text, image_data)
 
-        sender_username = await self.get_username(new_message.sender_id)
-
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'chat_message',
+        if new_message:
+            sender_username = await self.get_username(new_message.sender_id)
+            message_payload = {
                 'sender': sender_username,
                 'message': new_message.text,
                 'timestamp': new_message.timestamp.isoformat(),
             }
-        )
+
+            if new_message.image:
+                message_payload['image_url'] = new_message.image.url
+
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {'type': 'chat_message', **message_payload}
+            )
 
     async def chat_message(self, event):
-        """Sends a message to WebSocket."""
-        await self.send(text_data=json.dumps({
+        """Sends a message (text or image) to WebSocket."""
+        message_data = {
             'sender': event['sender'],
             'message': event['message'],
             'timestamp': event['timestamp']
-        }))
+        }
+
+        if 'image_url' in event:
+            message_data['image_url'] = event['image_url']
+
+        await self.send(text_data=json.dumps(message_data))
 
     @sync_to_async
     def get_chat_room(self):
@@ -89,11 +100,21 @@ class ChatConsumer(AsyncWebsocketConsumer):
         return list(Message.objects.filter(chat_room=self.chat_room).order_by('-timestamp')[:50])
 
     @sync_to_async
-    def save_message(self, message_text):
-        """Saves a new message to the database."""
+    def save_message(self, message_text, image_data):
+        """Saves a new message with an optional image."""
         try:
-            return Message.objects.create(chat_room=self.chat_room, sender=self.user, text=message_text)
-        except Exception:
+            new_message = Message(chat_room=self.chat_room, sender=self.user, text=message_text)
+
+            if image_data:
+                format, imgstr = image_data.split(';base64,')
+                ext = format.split('/')[-1]
+                image_name = f"message_{uuid.uuid4()}.{ext}"
+                new_message.image.save(image_name, ContentFile(base64.b64decode(imgstr)), save=True)
+
+            new_message.save()
+            return new_message
+        except Exception as e:
+            print(e)
             return None
 
     @sync_to_async
