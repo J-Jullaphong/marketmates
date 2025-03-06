@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 from decouple import config, Csv
 
@@ -37,8 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
     'django.contrib.staticfiles',
     'marketmates.apps.MarketmatesConfig',
+    'django_ckeditor_5',
+    'storages',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -56,7 +60,7 @@ ROOT_URLCONF = 'mysite.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -89,6 +93,15 @@ DATABASES = {
         }
     }
 
+STORAGES = {
+    'default': {
+        'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -107,6 +120,9 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+AUTHENTICATION_BACKENDS = ['marketmates.backends.EmailBackend',
+                           'django.contrib.auth.backends.ModelBackend']
 
 
 # Internationalization
@@ -131,6 +147,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+AUTH_USER_MODEL = 'marketmates.User'
 
 # AWS S3
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
@@ -141,3 +158,54 @@ AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazo
 AWS_S3_URL_PROTOCOL = 'https:'
 AWS_S3_USE_SSL = True
 AWS_S3_VERIFY = True
+
+CKEDITOR_UPLOADS_FOLDER = "forums"
+MEDIA_URL = f"{AWS_S3_URL_PROTOCOL}//{AWS_S3_CUSTOM_DOMAIN}/{CKEDITOR_UPLOADS_FOLDER}/"
+
+CKEDITOR_5_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+CKEDITOR_5_UPLOAD_PATH = "ckeditor/uploads/"
+
+CK_EDITOR_5_UPLOAD_FILE_VIEW_NAME = "ckeditor_file_uploader"
+
+CKEDITOR_5_CONFIGS = {
+    "default": {
+        "toolbar": [
+            "heading", "|",
+            "bold", "italic", "underline", "|",
+            "link", "imageUpload", "blockQuote", "|",
+            "undo", "redo"
+        ],
+        "image": {
+            "toolbar": [
+                "imageStyle:full",
+                "imageStyle:side",
+                "|",
+                "imageTextAlternative"
+            ]
+        },
+        "uploadUrl": "/ckeditor5/upload/",
+    },
+}
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+CELERY_BROKER_URL = config('CELERY_BROKER_URL')
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': config('REDIS_CACHE_URL'),
+        'TIMEOUT': None,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+    }
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
+
+ASGI_APPLICATION = "mysite.asgi.application"

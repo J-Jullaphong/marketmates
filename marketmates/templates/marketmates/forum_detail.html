@@ -1,0 +1,156 @@
+{% extends "marketmates/base.html" %}
+{% load static %}
+
+{% block header %}
+    {{ form.media }}
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Left Sidebar: Popular Tags & Private Groups -->
+        <aside class="col-lg-3 sticky-sidebar">
+            <section class="mb-4">
+                <h5 class="fw-bold text-primary">Popular Tags</h5>
+                <ul class="list-group">
+                    {% for tag in tags %}
+                        <li class="list-group-item border-0 d-flex align-items-center">
+                            <a href="{% url 'marketmates:search_forums' %}?q=%23{{ tag.tag_name }}"
+                               class="text-decoration-none">
+                                <span class="badge me-2" style="background-color: #5D5FEF;">#{{ tag.tag_name }}</span>
+                            </a>
+                            <small class="text-muted">{{ tag.forum_count }} Posts</small>
+                        </li>
+                    {% empty %}
+                        <p class="text-muted">No tags available.</p>
+                    {% endfor %}
+                </ul>
+            </section>
+            <section>
+                <h5 class="fw-bold text-primary">Private Groups</h5>
+                <ul class="list-group">
+                    {% for group in private_groups %}
+                        <li class="list-group-item border-0">
+                            <i class="bi bi-people-fill text-secondary"></i>
+                            <strong>{{ group.name }}</strong> ({{ group.members.count }} members)
+                        </li>
+                    {% empty %}
+                        <p class="text-muted">No private groups available.</p>
+                    {% endfor %}
+                </ul>
+            </section>
+        </aside>
+
+        <!-- Main: Forum Content -->
+        <main class="col-lg-6">
+            <!-- Forum Content -->
+            <article class="card shadow-sm border-0 p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-person-circle fs-4 me-2"></i>
+                    <div>
+                        <h6 class="mb-0 fw-bold">{{ forum.created_by.username }}</h6>
+                        <small class="text-muted">{{ forum.created_at|timesince }} ago</small>
+                    </div>
+                </div>
+                <h3 class="fw-bold">{{ forum.title }}</h3>
+
+                {% with forum.get_images as images %}
+                    {% if images %}
+                        <div class="d-flex overflow-auto mb-3 image-gallery">
+                            {% for img in images %}
+                                <img src="{{ img }}" class="rounded shadow-sm img-thumbnail image-preview"
+                                     data-bs-toggle="modal" data-bs-target="#imageModal"
+                                     data-src="{{ img }}"
+                                     style="height: 200px; width: auto; object-fit: cover; cursor: pointer;"
+                                     alt="Forum Image">
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Image Modal -->
+                <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-xl">  <!-- 🔹 Make modal extra-large -->
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Image Preview</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <img id="modalImage" src="" class="img-fluid rounded image-enlarge"
+                                     alt="Enlarged Image">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ck-content text-muted">
+                    {{ forum.get_formatted_content|safe }}
+                </div>
+            </article>
+
+            <!-- User Response Input -->
+            {% if user.is_authenticated %}
+                <section class="mt-4">
+                    <h5 class="fw-bold text-primary">Leave a Response</h5>
+                    <div class="card p-3 shadow-sm">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-person-circle fs-4 me-2"></i>
+                            <strong>{{ request.user.username }}</strong>
+                        </div>
+                        <form method="POST" enctype="multipart/form-data" class="mt-3">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                {{ form.as_p }}
+                            </div>
+                            <button type="submit" class="btn btn-primary">Send</button>
+                        </form>
+                    </div>
+                </section>
+            {% else %}
+                <section class=" mt-4
+                            ">
+                    <p class="text-muted text-center">You must be logged in to leave a response.</p>
+                </section>
+            {% endif %}
+
+            <!-- Comment Section -->
+            <section class="mt-4">
+                <h5 class="fw-bold text-primary">Responses <span
+                        class="badge bg-secondary">{{ comments.count }}</span></h5>
+
+                {% for comment in comments %}
+                    <div class="card shadow-sm border-0 mb-3 p-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-person-circle fs-4 me-2"></i>
+                            <strong>{{ comment.user.username }}</strong>
+                        </div>
+                        <div class="ck-content mt-2">
+                            {{ comment.comment_content|safe }}
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-muted">No responses yet.</p>
+                {% endfor %}
+            </section>
+        </main>
+
+        <!-- Right Sidebar: Empty-->
+        <div class="col-lg-3"></div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let imageModal = document.getElementById("imageModal");
+            let modalImage = document.getElementById("modalImage");
+            document.querySelectorAll(".image-preview").forEach(image => {
+                image.addEventListener("click", function () {
+                    let imgSrc = this.getAttribute("data-src");
+                    modalImage.setAttribute("src", imgSrc);
+                });
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends "marketmates/base.html" %}
+{% load static %}
+
+{% block header %}
+    {{ form.media }}
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Left Sidebar: Popular Tags & Private Groups -->
+            <aside class="col-lg-3 sticky-sidebar">
+                <section class="mb-4">
+                    <h5 class="fw-bold text-primary">Popular Tags</h5>
+                    <ul class="list-group">
+                        {% for tag in tags %}
+                            <li class="list-group-item border-0 d-flex align-items-center">
+                                <a href="{% url 'marketmates:search_forums' %}?q=%23{{ tag.tag_name }}"
+                                   class="text-decoration-none">
+                                    <span class="badge me-2" style="background-color: #5D5FEF;">#{{ tag.tag_name }}</span>
+                                </a>
+                                <small class="text-muted">{{ tag.forum_count }} Posts</small>
+                            </li>
+                        {% empty %}
+                            <p class="text-muted">No tags available.</p>
+                        {% endfor %}
+                    </ul>
+                </section>
+                <section>
+                    <h5 class="fw-bold text-primary">Private Groups</h5>
+                    <ul class="list-group">
+                        {% for group in private_groups %}
+                            <li class="list-group-item border-0">
+                                <i class="bi bi-people-fill text-secondary"></i>
+                                <strong>{{ group.name }}</strong> ({{ group.members.count }} members)
+                            </li>
+                        {% empty %}
+                            <p class="text-muted">No private groups available.</p>
+                        {% endfor %}
+                    </ul>
+                </section>
+            </aside>
+
+            <!-- Main: Market Update & Posts -->
+            <main class="col-lg-6">
+                <section class="card shadow-sm border-0 mb-4">
+                    <div class="card-body">
+                        <h5 class="fw-bold text-primary"><a href="{% url 'marketmates:market_update' %}" class="text-decoration-none">Market Update →</a></h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <p><strong>SET Index:</strong> <span>{{ latest_close|floatformat:2 }} THB</span> (
+                                {% if percent_change < 0 %}
+                                    <span class="text-danger">{{ percent_change|floatformat:2 }}%</span>
+                                {% else %}
+                                    <span class="text-success">+{{ percent_change|floatformat:2 }}%</span>
+                                {% endif %}
+                            )</p>
+                        </div>
+
+                        <!-- Data Sections -->
+                        <div class="card p-3">
+                            <div class="mb-3">
+                                <select id="dataSelect" class="form-select" onchange="updateData()">
+                                    <option value="most_active_by_value">Most Active by Value</option>
+                                    <option value="most_active_by_volume">Most Active by Volume</option>
+                                    <option value="top_gainers">Top Gainers</option>
+                                    <option value="top_losers">Top Losers</option>
+                                </select>
+                            </div>
+
+                            <!-- Most Active by Value -->
+                            <div id="most_active_by_value" class="data-section" style="display:block;">
+                                <div class="card-body">
+                                    <ul class="list-inline mb-0 d-flex overflow-x-auto">
+                                        {% for row in most_active_value.values %}
+                                            <li class="list-inline-item me-3">
+                                                <span class="badge {% if row.2|stringformat:'s'|default:''|slice:':1' == '+' %}bg-success{% elif row.2|stringformat:'s'|default:''|slice:':1' == '-' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                                    {{ row.0 }}: {{ row.1 }} ({{ row.2 }})
+                                                </span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Most Active by Volume -->
+                            <div id="most_active_by_volume" class="data-section" style="display:none;">
+                                <div class="card-body">
+                                    <ul class="list-inline mb-0 d-flex overflow-x-auto">
+                                        {% for row in most_active_volume.values %}
+                                            <li class="list-inline-item me-3">
+                                                <span class="badge {% if row.2|stringformat:'s'|default:''|slice:':1' == '+' %}bg-success{% elif row.2|stringformat:'s'|default:''|slice:':1' == '-' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                                    {{ row.0 }}: {{ row.1 }} ({{ row.2 }})
+                                                </span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Top Gainers -->
+                            <div id="top_gainers" class="data-section" style="display:none;">
+                                <div class="card-body">
+                                    <ul class="list-inline mb-0 d-flex overflow-x-auto">
+                                        {% for row in top_gainer.values %}
+                                            <li class="list-inline-item me-3">
+                                                <span class="badge bg-success">
+                                                    {{ row.0 }}: {{ row.1 }} ({{ row.2 }})
+                                                </span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Top Losers -->
+                            <div id="top_losers" class="data-section" style="display:none;">
+                                <div class="card-body">
+                                    <ul class="list-inline mb-0 d-flex overflow-x-auto">
+                                        {% for row in top_loser.values %}
+                                            <li class="list-inline-item me-3">
+                                                <span class="badge bg-danger">
+                                                    {{ row.0 }}: {{ row.1 }} ({{ row.2 }})
+                                                </span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Post Creation Form -->
+                <section class="mb-3">
+                    <form id="quickPostForm" action="{% url 'marketmates:create_forum' %}" method="GET">
+                        <div class="input-group shadow-sm">
+                            <input type="text" id="quickPostInput" name="prefill_text"
+                                   class="form-control rounded-start-pill"
+                                   placeholder="What's on your mind?" onkeypress="submitOnEnter(event)">
+                            <button type="submit" class="btn btn-primary rounded-end-pill">Create Post</button>
+                        </div>
+                    </form>
+                </section>
+
+                {% for forum in forums %}
+                    <article class="card shadow-sm border-0 mb-3">
+                        <div class="card-body d-flex align-items-center">
+                            <!-- Extracted Image from Description -->
+                            {% with forum.get_first_image as image_url %}
+                                {% if image_url %}
+                                    <img src="{{ image_url }}" class="rounded me-3"
+                                         style="width: 100px; height: 100px; object-fit: cover;"
+                                         alt="{{ forum.title }}">
+                                {% else %}
+                                    <div class="rounded bg-light d-flex align-items-center justify-content-center me-3"
+                                         style="width: 100px; height: 100px;">
+                                        <i class="bi bi-card-image text-muted fs-1"></i>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+
+                            <!-- Forum Details -->
+                            <div class="flex-grow-1">
+                                <h5 class="card-title fw-bold">
+                                    <a href="{% url 'marketmates:forum_detail' forum.id %}"
+                                       class="text-dark text-decoration-none">
+                                        {{ forum.title }}
+                                    </a>
+                                </h5>
+
+                                <!-- Meta Info: Created By, Date, Comment Count -->
+                                <p class="small text-muted mb-2">
+                                    🧑 <strong>{{ forum.created_by.username }}</strong> &bull;
+                                    📅 {{ forum.created_at|date:"M d, Y" }} &bull;
+                                    💬 {{ forum.comment_set.count }} Comments
+                                </p>
+
+                                <!-- Forum Tags -->
+                                <div class="d-flex flex-wrap">
+                                    {% for tag in forum.tags.all|slice:":3" %}
+                                        <a style="background-color: #5D5FEF; href="
+                                           {% url 'marketmates:search_forums' %}?q=%23{{ tag.tag_name }}"
+                                           class="badge text-white me-1 text-decoration-none">#{{ tag.tag_name }}</a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </main>
+
+            <!-- Right Sidebar: Announcements -->
+            <aside class="col-lg-3 sticky-sidebar">
+                <h5 class="fw-bold text-primary">Announcements →</h5>
+                <div class="card border-0 shadow-sm mb-2">
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold">📢 Market Trends & Insights</h6>
+                        <p class="text-muted small">Stay updated with the latest stock trends and investment tips.</p>
+                        <a href="#" class="btn btn-sm btn-outline-primary">Read More</a>
+                    </div>
+                </div>
+                <div class="card border-0 shadow-sm mb-2">
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold">💡 Investment Strategies</h6>
+                        <p class="text-muted small">Learn about long-term and short-term strategies for better returns.</p>
+                        <a href="#" class="btn btn-sm btn-outline-primary">Read More</a>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script>
+        function updateData() {
+            const selectedOption = document.getElementById("dataSelect").value;
+            const sections = document.querySelectorAll(".data-section");
+            sections.forEach(section => section.style.display = "none");
+            document.getElementById(selectedOption).style.display = "block";
+        }
+
+        function submitOnEnter(event) {
+            if (event.key === "Enter") {
+                document.getElementById("quickPostForm").submit();
+            }
+        }
+    </script>
+{% endblock %}
