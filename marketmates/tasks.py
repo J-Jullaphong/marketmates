@@ -6,6 +6,7 @@ import yfinance as yf
 from celery import shared_task
 from celery.schedules import crontab
 from django.core.cache import cache
+from django.conf import settings
 from selenium import webdriver
 
 from mysite.celery import app
@@ -15,7 +16,7 @@ from mysite.celery import app
 def setup_periodic_tasks(sender, **kwargs):
     """Fetch and Store Market Data Periodically."""
     sender.add_periodic_task(
-        crontab(minute='0', hour='9-18', day_of_week='1-5'),
+        crontab(minute='*/10', hour='9-18', day_of_week='1-5'),
         fetch_and_store_market_data.s(),
     )
 
@@ -49,8 +50,8 @@ def fetch_and_store_market_data():
     """Scrape and store market data."""
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
-    driver = webdriver.Chrome(options=options)
-
+    driver = webdriver.Remote(command_executor=settings.SELENIUM_REMOTE_URL,
+                              options=options)
     try:
         driver.get('https://www.set.or.th/th/market/product/stock/top-ranking')
         data = driver.page_source

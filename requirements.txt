@@ -15,3 +15,5 @@ yfinance==0.2.54
 celery
 redis
 django-redis
+lxml
+whitenoise[brotli]

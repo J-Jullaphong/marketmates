@@ -1,0 +1,46 @@
+services:
+    chrome:
+        image: selenium/standalone-chrome:latest
+        platform: linux/amd64
+        container_name: marketmates_chrome
+        hostname: chrome
+        privileged: true
+        shm_size: 2g
+        restart: always
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+
+    redis:
+        image: redis:latest
+        platform: linux/amd64
+        container_name: marketmates_redis
+        ports:
+            - "6379:6379"
+        restart: always
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+
+    framework:
+        build:
+            context: .
+            dockerfile: Dockerfile-prod
+        container_name: marketmates_framework
+        ports:
+            - "8000:8000"
+        depends_on:
+            chrome:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        volumes:
+            - .:/app
+        env_file:
+            - .env.prod
+        restart: always
+        command: ["/entrypoint.sh"]
