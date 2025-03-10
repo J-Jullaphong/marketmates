@@ -97,9 +97,28 @@
         const modal = document.getElementById('createChatRoomModal');
         const form = modal.querySelector('form');
         const searchInput = document.getElementById('searchMembers');
+        const searchChatRooms = document.getElementById('searchChatRooms');
         const suggestionsList = document.getElementById('memberSuggestions');
         const selectedMembersList = document.getElementById('selectedMembersList');
         const selectedMembersInput = document.getElementById('selectedMembersInput');
+
+        const chatRoomListItems = document.querySelectorAll('.list-group-item');
+
+        searchChatRooms.addEventListener('input', function () {
+            const query = searchChatRooms.value.trim().toLowerCase();
+
+            chatRoomListItems.forEach(chatRoom => {
+                const chatRoomNameElement = chatRoom.querySelector('a strong');
+                if (chatRoomNameElement) {
+                    const chatRoomName = chatRoomNameElement.textContent.trim().toLowerCase();
+                    if (chatRoomName.includes(query)) {
+                        chatRoom.classList.remove('d-none');
+                    } else {
+                        chatRoom.classList.add('d-none');
+                    }
+                }
+            });
+        });
 
         const allUsers = JSON.parse('{{ users_json|escapejs }}');
         let selectedMemberIds = [];
@@ -123,7 +142,7 @@
         });
 
         function updateSelectedMembersInput() {
-            selectedMembersInput.value = selectedMemberIds.join(','); // Store as a comma-separated string
+            selectedMembersInput.value = selectedMemberIds.join(',');
         }
 
         function displaySuggestions(query) {

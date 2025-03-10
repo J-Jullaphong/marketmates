@@ -1,10 +1,13 @@
-import uuid
-import json
 import base64
-from channels.generic.websocket import AsyncWebsocketConsumer
+import json
+import uuid
+
 from asgiref.sync import sync_to_async
-from .models import Message, ChatRoom, User
+from channels.generic.websocket import AsyncWebsocketConsumer
+from django.conf import settings
 from django.core.files.base import ContentFile
+
+from .models import Message, ChatRoom, User
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -25,8 +28,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
-        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-        await self.channel_layer.group_add(self.user_group_name, self.channel_name)
+        await self.channel_layer.group_add(self.room_group_name,
+                                           self.channel_name)
+        await self.channel_layer.group_add(self.user_group_name,
+                                           self.channel_name)
 
         await self.accept()
 
@@ -35,19 +40,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if messages:
             sender_ids = {msg.sender_id for msg in messages}
             usernames = await self.get_usernames_bulk(sender_ids)
+            profile_pictures = await self.get_profile_pictures_bulk(sender_ids)
 
             messages_data = [{
                 'sender': usernames.get(msg.sender_id, "Unknown"),
+                'profile_picture': profile_pictures.get(msg.sender_id, None),
                 'message': msg.text,
+                'image_url': msg.image.url if msg.image else None,
                 'timestamp': msg.timestamp.isoformat()
             } for msg in messages]
 
-            await self.send(text_data=json.dumps({'previous_messages': messages_data}))
+            await self.send(
+                text_data=json.dumps({'previous_messages': messages_data}))
 
     async def disconnect(self, close_code):
         """Handles WebSocket disconnection."""
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
-        await self.channel_layer.group_discard(self.user_group_name, self.channel_name)
+        await self.channel_layer.group_discard(self.room_group_name,
+                                               self.channel_name)
+        await self.channel_layer.group_discard(self.user_group_name,
+                                               self.channel_name)
 
     async def receive(self, text_data):
         """Handles receiving a message (text or image) from WebSocket."""
@@ -62,14 +73,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         if new_message:
             sender_username = await self.get_username(new_message.sender_id)
+            sender_profile_picture = await self.get_profile_picture(
+                new_message.sender_id)
             message_payload = {
                 'sender': sender_username,
+                'profile_picture': sender_profile_picture,
                 'message': new_message.text,
+                'image_url': new_message.image.url if new_message.image else None,
                 'timestamp': new_message.timestamp.isoformat(),
             }
-
-            if new_message.image:
-                message_payload['image_url'] = new_message.image.url
 
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -97,19 +109,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @sync_to_async
     def get_previous_messages(self):
         """Fetches previous messages for the chat room."""
-        return list(Message.objects.filter(chat_room=self.chat_room).order_by('-timestamp')[:50])
+        return list(Message.objects.filter(chat_room=self.chat_room).order_by(
+            '-timestamp')[:50])
 
     @sync_to_async
     def save_message(self, message_text, image_data):
         """Saves a new message with an optional image."""
         try:
-            new_message = Message(chat_room=self.chat_room, sender=self.user, text=message_text)
+            new_message = Message(chat_room=self.chat_room, sender=self.user,
+                                  text=message_text)
 
             if image_data:
                 format, imgstr = image_data.split(';base64,')
                 ext = format.split('/')[-1]
                 image_name = f"message_{uuid.uuid4()}.{ext}"
-                new_message.image.save(image_name, ContentFile(base64.b64decode(imgstr)), save=True)
+                new_message.image.save(image_name,
+                                       ContentFile(base64.b64decode(imgstr)),
+                                       save=True)
 
             new_message.save()
             return new_message
@@ -124,7 +140,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
         return user.username if user else "Unknown"
 
     @sync_to_async
+    def get_profile_picture(self, user_id):
+        """Fetches a profile picture asynchronously to prevent direct sync access."""
+        user = User.objects.filter(id=user_id).first()
+        return f"{settings.AWS_S3_URL_PROTOCOL}//{settings.AWS_S3_CUSTOM_DOMAIN}/{user.profile_picture}" if user else None
+
+    @sync_to_async
     def get_usernames_bulk(self, user_ids):
         """Fetches usernames for multiple user IDs in bulk."""
-        users = User.objects.filter(id__in=user_ids).values_list('id', 'username')
+        users = User.objects.filter(id__in=user_ids).values_list('id',
+                                                                 'username')
         return {user_id: username for user_id, username in users}
+
+    @sync_to_async
+    def get_profile_pictures_bulk(self, user_ids):
+        """Fetches profile pictures for multiple user IDs in bulk."""
+        users = User.objects.filter(id__in=user_ids).values_list('id',
+                                                                 'profile_picture')
+        return {
+            user_id: f"{settings.AWS_S3_URL_PROTOCOL}//{settings.AWS_S3_CUSTOM_DOMAIN}/{profile_picture}" if profile_picture else None
+            for user_id, profile_picture in users}
