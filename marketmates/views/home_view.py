@@ -17,11 +17,6 @@ class HomeView(TemplateView):
         ).order_by("-forum_count")[:5]
         context["private_groups"] = ChatRoom.objects.filter(is_public=False)[
                                     :5]
-
-        market_data = cache.get('market_data')
-        if not market_data:
-            market_data = fetch_and_store_market_data.delay().get()
-
-        context.update(market_data)
+        context.update(cache.get('market_data'))
 
         return context

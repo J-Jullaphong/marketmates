@@ -6,13 +6,10 @@ set -e
 source venv/bin/activate
 
 # Start Celery worker
-celery -A mysite worker -l INFO &
+celery -A mysite worker -l INFO --detach
 
 # Start Celery beat
-celery -A mysite beat -l INFO &
-
-# Fetch Market Data
-celery -A mysite call marketmates.tasks.fetch_and_store_market_data
+celery -A mysite beat -l INFO --detach
 
 # Collect Static files
 python manage.py collectstatic --noinput

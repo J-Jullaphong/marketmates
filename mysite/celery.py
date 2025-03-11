@@ -12,3 +12,5 @@ app = Celery('marketmates')
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+
+app.conf.task_ignore_result = True

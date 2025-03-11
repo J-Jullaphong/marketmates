@@ -3,20 +3,28 @@ from io import StringIO
 
 import pandas as pd
 import yfinance as yf
-from celery import shared_task
+from celery import shared_task, signals
 from celery.schedules import crontab
-from django.core.cache import cache
 from django.conf import settings
+from django.core.cache import cache
 from selenium import webdriver
 
 from mysite.celery import app
 
 
+@signals.worker_ready.connect()
+def fetch_on_start(**kwargs):
+    """Fetch and store market data when the worker is ready to start."""
+    print("Fetching market data at startup...")
+    fetch_and_store_market_data.apply_async().get()
+    print("Market data fetched successfully!")
+
+
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
-    """Fetch and Store Market Data Periodically."""
+    """Fetch and store market data periodically."""
     sender.add_periodic_task(
-        crontab(minute='*/10', hour='9-18', day_of_week='1-5'),
+        crontab(minute='*/10', hour='10-18', day_of_week='1-5'),
         fetch_and_store_market_data.s(),
     )
 
@@ -28,7 +36,7 @@ def fetch_stock_data():
     prev_close = set_data['Close'].iloc[-2] if len(
         set_data) > 1 else latest_close
     percent_change = ((
-                                  latest_close - prev_close) / prev_close) * 100 if prev_close != 0 else 0
+                              latest_close - prev_close) / prev_close) * 100 if prev_close != 0 else 0
     return set_data, latest_close, percent_change
 
 
