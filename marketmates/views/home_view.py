@@ -17,6 +17,9 @@ class HomeView(TemplateView):
         ).order_by("-forum_count")[:5]
         context["private_groups"] = ChatRoom.objects.filter(is_public=False)[
                                     :5]
-        context.update(cache.get('market_data'))
+        try:
+            context.update(cache.get('market_data'))
+        except TypeError:
+            context.update(fetch_and_store_market_data())
 
         return context
