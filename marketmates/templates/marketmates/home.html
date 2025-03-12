@@ -6,10 +6,10 @@
 {% endblock %}
 
 {% block content %}
-    <div class="container-fluid mt-4">
-        <div class="row">
+    <div class="container-fluid mt-4 px-0">
+        <div class="row g-3">
             <!-- Left Sidebar: Popular Tags & Private Groups -->
-            <aside class="col-lg-3 sticky-sidebar">
+            <aside class="col-lg-3 col-md-4 d-none d-md-block sticky-sidebar d-flex flex-column align-items-start px-3 mx-auto" style="max-width: 250px;">
                 <section class="mb-4">
                     <h5 class="fw-bold text-primary">Popular Tags</h5>
                     <ul class="list-group">
@@ -43,7 +43,7 @@
             </aside>
 
             <!-- Main: Market Update & Posts -->
-            <main class="col-lg-6">
+            <main class="col-lg-6 col-md-8 col-12">
                 <section class="card shadow-sm border-0 mb-4">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -54,13 +54,12 @@
                             <a href="{% url 'marketmates:market_update' %}" class="btn btn-sm btn-outline-primary">View
                                 More</a>
                         </div>
-                        <div class="d-flex align-items-center justify-content-between p-4 rounded-3 shadow-sm">
+                        <div class="d-flex flex-column flex-md-row align-items-center align-items-md-start justify-content-between p-4 rounded-3 shadow-sm text-center text-md-start">
                             <div class="d-flex flex-column">
-                                <p class="mb-0 fw-bold text-dark fs-4">SET Index {{ latest_close|floatformat:2 }} <span
-                                        class="text-muted fs-6"></span></p>
+                                <p class="mb-0 fw-bold text-dark fs-4">SET Index {{ latest_close|floatformat:2 }}</p>
                                 <p class="mb-0 text-muted small">Last Update | {{ last_update }}</p>
                             </div>
-                            <div class="text-end d-flex flex-column align-items-end">
+                            <div class="mt-2 mt-md-0 text-md-end">
                                 <span class="fw-bold fs-5 {% if percent_change < 0 %}text-danger{% else %}text-success{% endif %}">
                                     {{ change_value|floatformat:2 }}</span>
                                 <span class="badge {% if percent_change < 0 %}bg-danger{% else %}bg-success{% endif %} text-white mt-1"
@@ -173,7 +172,7 @@
                 </section>
 
                 <!-- Post Creation Form -->
-                <section class="mb-4">
+                <section class="mb-4 text-center">
                     <form id="quickPostForm" action="{% url 'marketmates:create_forum' %}" method="GET">
                         <div class="input-group shadow-sm rounded-pill">
                             <input type="text" id="quickPostInput" name="prefill_text"
@@ -188,21 +187,19 @@
 
                 {% for forum in forums %}
                     <article class="card shadow-sm border-0 mb-3">
-                        <div class="card-body d-flex align-items-center">
-                            <!-- Extracted Image from Description -->
+                        <div class="card-body d-flex align-items-start">
                             {% with forum.get_first_image as image_url %}
                                 {% if image_url %}
-                                    <img src="{{ image_url }}" class="rounded me-3"
-                                         style="width: 100px; height: 100px; object-fit: cover;"
-                                         alt="{{ forum.title }}">
+                                    <img src="{{ image_url }}" class="rounded me-3 flex-shrink-0"
+                                         style="width: 100px; height: 100px; object-fit: cover;">
                                 {% else %}
-                                    <div class="rounded bg-light d-flex align-items-center justify-content-center me-3"
+                                    <div class="rounded bg-light d-flex align-items-center justify-content-center me-3 flex-shrink-0"
                                          style="width: 100px; height: 100px;">
                                         <i class="bi bi-card-image text-muted fs-1"></i>
                                     </div>
                                 {% endif %}
                             {% endwith %}
-
+                
                             <!-- Forum Details -->
                             <div class="flex-grow-1">
                                 <h5 class="card-title fw-bold">
@@ -211,45 +208,49 @@
                                         {{ forum.title }}
                                     </a>
                                 </h5>
-                                <p class="text-muted small mt-1" style="font-size: 0.75rem;">
+                                <p class="text-muted small mt-1 d-flex align-items-center">
                                     {% if forum.created_by.profile_picture %}
-                                        <img src="{{ forum.created_by.profile_picture.url }}"
-                                             alt="{{ forum.created_by.username }}"
-                                             class="rounded-circle me-1"
+                                        <img src="{{ forum.created_by.profile_picture.url }}" alt="{{ forum.created_by.username }}"
+                                             class="rounded-circle me-2"
                                              style="width: 20px; height: 20px; object-fit: cover;">
                                     {% else %}
-                                        <i class="bi bi-person-circle text-secondary fs-6 me-1"></i>
+                                        <i class="bi bi-person-circle text-secondary fs-6 me-2"></i>
                                     {% endif %}
-                                    <strong>{{ forum.created_by.username }}</strong> &bull;
-                                    <i class="bi bi-calendar text-secondary me-1"></i> {{ forum.created_at|date:"M d, Y" }}
+                                    <strong class="me-2">{{ forum.created_by.username }}</strong>
+                                    <span class="me-2">&bull;</span>
+                                    <i class="bi bi-calendar text-secondary me-1"></i>
+                                    <span class="ms-1">{{ forum.created_at|date:"M d, Y" }}</span>
                                 </p>
-
+                
+                                <!-- Tags & Comments -->
                                 <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <!-- Forum Tags -->
                                     <div class="d-flex flex-wrap">
                                         {% for tag in forum.tags.all|slice:":3" %}
-                                            <a href="?q=%23{{ tag.tag_name }}"
-                                               class="badge text-white me-1 text-decoration-none"
+                                            <a href="?q=%23{{ tag.tag_name }}" class="badge text-white me-1 text-decoration-none mt-2"
                                                style="background-color: #5D5FEF;">
                                                 #{{ tag.tag_name }}
                                             </a>
                                         {% endfor %}
                                     </div>
-
-                                    <!-- Comments Count  -->
-                                    <p class="text-muted small mb-0">
-                                        <i class="bi bi-chat-dots-fill text-secondary me-1"></i> {{ forum.comment_set.count }}
-                                        Comments
+                                    <p class="text-muted small mb-0 mt-2 text-end" style="width: 150px;">
+                                        <i class="bi bi-chat-dots-fill text-secondary me-1"></i> 
+                                        {% if forum.comment_set.count > 99 %}
+                                            99+
+                                        {% else %}
+                                            {{ forum.comment_set.count }}
+                                        {% endif %}
+                                        Comments                                    
                                     </p>
                                 </div>
                             </div>
                         </div>
                     </article>
                 {% endfor %}
+
             </main>
 
             <!-- Right Sidebar: Announcements -->
-            <aside class="col-lg-3 sticky-sidebar">
+            <aside class="col-lg-3 col-md-4 d-none d-md-block sticky-sidebar">
                 <h5 class="fw-bold text-primary">Announcements →</h5>
                 <div class="card border-0 shadow-sm mb-2">
                     <div class="card-body">
@@ -285,4 +286,3 @@
         }
     </script>
 {% endblock %}
-

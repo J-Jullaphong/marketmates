@@ -1,6 +1,6 @@
 import json
 from operator import attrgetter
-
+from django.utils.timezone import now
 from django.views.generic import ListView
 from django.shortcuts import redirect
 from django.contrib.auth import get_user_model
@@ -37,6 +37,7 @@ class ChatRoomListView(ListView):
         last_messages = list(Message.objects.order_by('chat_room', '-timestamp').distinct('chat_room'))
         last_messages.sort(key=attrgetter('timestamp'), reverse=True)
         context['last_messages'] = last_messages
+        context['today_date'] = now().date().strftime("%Y-%m-%d")
 
         return context
 

@@ -3,19 +3,22 @@
 
 {% block styles %}
     <style>
-        body {
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
             overflow: hidden;
         }
 
         .chat-messages {
             flex-grow: 1;
-            overflow-y: auto;
+            overflow-y: scroll;
             background-color: white;
-            border: 1px solid #dee2e6;
-            display: flex;
-            flex-direction: column;
-            max-height: 85vh;
+            border: none;
             padding: 10px 10px 70px;
+            display: flex;
+            height: 80vh;
+            flex-direction: column;
         }
 
         .image-modal {
@@ -27,7 +30,6 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.7);
-            display: flex;
             align-items: center;
             justify-content: center;
         }
@@ -37,7 +39,7 @@
             background-color: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             max-width: 80%;
             max-height: 80%;
             display: flex;
@@ -100,7 +102,6 @@
         }
 
         .timestamp-container {
-            height: 100%;
             display: flex;
             flex-direction: column-reverse;
         }
@@ -143,9 +144,27 @@
             box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
         }
 
-        .card-header {
+        .card {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            margin: 0;  
+            padding: 0; 
+            border: none; 
+        }
+
+        .card-body {
+            flex-grow: 1;
+            overflow-y: auto; 
+        }
+
+        .chat-header {
             background-color: #5D5FEF;
+            border-color: #5D5FEF;
             color: white;
+            padding: 10px;
+            width: 100vw;
         }
 
         .card-footer {
@@ -154,7 +173,15 @@
             background-color: #f3f2f2;
             border-top: 1px solid #dee2e6;
             padding: 10px;
-            z-index: 10;
+            width: 100vw;
+        }
+
+        .container-fluid {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            width: 100vw !important;
         }
 
         .btn-primary {
@@ -203,11 +230,10 @@
 {% endblock %}
 
 {% block content %}
-    <div class="card shadow flex-grow-1 d-flex flex-column">
-        <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="chat-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">{{ room_name }}</h5>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#manageMembersModal">
-                <i class="bi bi-list"></i>
+                <i class="bi bi-three-dots-vertical"></i>
             </button>
         </div>
 
@@ -270,7 +296,6 @@
                 </button>
             </div>
         </div>
-    </div>
 
     <script>
         const roomId = "{{ room_id }}";

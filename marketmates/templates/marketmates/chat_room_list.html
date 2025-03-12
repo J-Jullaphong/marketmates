@@ -5,7 +5,7 @@
     <h2 class="mb-3 text-center">My Chat Rooms</h2>
 
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-lg-6 col-md-8 col-sm-12 col-12">
             <div class="card shadow-sm p-4 mb-4">
                 <h5 class="d-flex justify-content-between align-items-center">
                     Chat Rooms
@@ -29,12 +29,27 @@
                                             {% for message in last_messages %}
                                                 {% if message.chat_room.id == room_id %}
                                                     <em>{{ message.text|truncatewords:5 }}</em>
+                                                    {% if not message.text and message.image %}
+                                                        <em>{{ message.sender }} sent an image.</em>
+                                                    {% endif %}
                                                 {% endif %}
                                             {% endfor %}
                                         {% endwith %}
                                     </div>
                                 </div>
-                                <span class="text-muted">Members: {{ chat_room.members.count }}</span>
+                                <span class="text-muted" style="font-size: 0.75rem;">
+                                    {% with chat_room.id as room_id %}
+                                        {% for message in last_messages %}
+                                            {% if message.chat_room.id == room_id %}
+                                                {% if message.timestamp|date:"Y-m-d" == today_date %}
+                                                    {{ message.timestamp|time:"H:i" }}
+                                                {% else %}
+                                                    {{ message.timestamp|date:"d/m/Y" }}
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endwith %}
+                                </span>
                             </li>
                         {% endfor %}
                     </ul>
