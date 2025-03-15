@@ -33,6 +33,7 @@ services:
         container_name: marketmates_framework
         expose:
             - "8000"
+            - "8001"
         depends_on:
             chrome:
                 condition: service_healthy

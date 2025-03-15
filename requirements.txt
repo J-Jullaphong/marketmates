@@ -16,3 +16,4 @@ celery
 redis
 django-redis
 lxml
+gunicorn
