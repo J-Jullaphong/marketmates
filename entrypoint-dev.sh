@@ -5,6 +5,9 @@ set -e
 # Activate virtual environment
 source venv/bin/activate
 
+# Apply database migrations
+python manage.py migrate
+
 # Start Celery worker
 celery -A mysite worker -l INFO --detach
 
