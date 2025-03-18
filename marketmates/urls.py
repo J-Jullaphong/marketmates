@@ -21,4 +21,7 @@ urlpatterns = [
     path("registration/", RegistrationFormView.as_view(), name="registration"),
 
     path("profile/", ProfileView.as_view(), name="profile"),
+
+    path("experts/", ExpertListView.as_view(), name="expert_list"),
+    path("experts/<uuid:pk>/", ExpertDetailView.as_view(), name="expert_detail"),
 ]
