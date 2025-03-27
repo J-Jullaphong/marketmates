@@ -4,6 +4,7 @@ import uuid
 
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from notifications.signals import notify
 from django.conf import settings
 from django.core.files.base import ContentFile
 
@@ -128,6 +129,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
                                        save=True)
 
             new_message.save()
+
+            other_members = self.chat_room.members.exclude(id=self.user.id)
+            if other_members.exists():
+                preview = message_text[:100] + "..." if message_text else "Image message"
+                notify.send(
+                    sender=self.user,
+                    recipient=other_members,
+                    verb='sent you a message',
+                    description=preview,
+                    level='chat',
+                    target=self.chat_room
+                )
+
             return new_message
         except Exception as e:
             print(e)

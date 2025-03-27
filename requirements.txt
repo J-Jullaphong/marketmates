@@ -17,3 +17,4 @@ redis
 django-redis
 lxml
 gunicorn
+django-notifications-hq

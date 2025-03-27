@@ -2,6 +2,7 @@ import uuid
 
 from django.db import models
 from django_ckeditor_5.fields import CKEditor5Field
+from django.urls import reverse
 from bs4 import BeautifulSoup
 
 from .tag import Tag
@@ -31,3 +32,6 @@ class Forum(models.Model):
         for img in soup.find_all("img"):
             img.decompose()
         return str(soup)
+
+    def get_absolute_url(self):
+        return reverse("marketmates:forum_detail", kwargs={"pk": self.pk})

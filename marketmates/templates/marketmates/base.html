@@ -1,6 +1,23 @@
 {% load static %}
+{% load notifications_tags %}
 <!DOCTYPE html>
 <html lang="en">
+<style>
+    .notification-badge {
+        background-color: #dc3545;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 999px;
+        line-height: 1.2;
+        min-width: 20px;
+        text-align: center;
+        white-space: nowrap;
+        z-index: 10;
+        top: -4px; 
+        right: -10px;
+    }
+</style>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -70,8 +87,12 @@
 
         <!-- Icons & Profile Dropdown (Laptop) -->
         <div class="d-none d-lg-flex align-items-center">
-            <a href="#" class="text-white me-5"><i class="bi bi-bell-fill fs-4"></i></a>
-            <a href="{% url 'marketmates:chat_room_list' %}" class="text-white me-5"><i class="bi bi-chat-dots-fill fs-4"></i></a>
+            <a href="{% url 'marketmates:notification_list' %}" class="text-white me-5"><i class="bi bi-bell-fill fs-4 position-relative">
+                <span class="notification-badge general-notify-badge position-absolute" style="display: none;"></span>
+            </i></a>
+            <a href="{% url 'marketmates:chat_room_list' %}" class="text-white me-5"><i class="bi bi-chat-dots-fill fs-4 position-relative">
+                <span class="notification-badge chat-notify-badge position-absolute" style="display: none;"></span>
+            </i></a>
 
             {% if user.is_authenticated %}
                 <!-- User Profile Dropdown -->
@@ -125,8 +146,12 @@
                 <li><a class="dropdown-item" href="#"><i class="bi bi-mortarboard-fill"></i> Learning</a></li>
                 <li><hr class="dropdown-divider"></li>
 
-                <li><a class="dropdown-item" href="{% url 'marketmates:chat_room_list' %}"><i class="bi bi-chat-dots-fill"></i> Chat</a></li>
-                <li><a class="dropdown-item" href="#"><i class="bi bi-bell-fill"></i> Notifications</a></li>
+                <li><a class="dropdown-item" href="{% url 'marketmates:chat_room_list' %}"><i class="bi bi-chat-dots-fill"></i> Chat
+                      <span class="badge bg-danger text-white chat-notify-badge"></span>
+                </a></li>
+                <li><a class="dropdown-item" href="{% url 'marketmates:notification_list' %}"><i class="bi bi-bell-fill"></i> Notifications
+                      <span class="badge bg-danger text-white general-notify-badge"></span>
+                </a></li>
                 {% if user.is_authenticated %}
                     <li><a class="dropdown-item" href="{% url 'marketmates:profile' %}"><i class="bi bi-person-circle"></i> Profile</a></li>
                     <li><a class="dropdown-item" href="#"><i class="bi bi-gear-fill"></i> Settings</a></li>
@@ -160,6 +185,42 @@
     {% block content %}
     {% endblock %}
 </div>
+
+<script src="{% static 'notifications/notify.js' %}"></script>
+<script>
+    function formatCount(count) {
+        return count > 99 ? '99+' : count.toString();
+    }
+    
+    function update_general_notify_badge(data) {
+        const badge = document.querySelector('.general-notify-badge');
+        if (!badge) return;
+    
+        const nonChatNotis = data.unread_list.filter(noti => noti.level !== 'chat');
+        if (nonChatNotis.length > 0) {
+            badge.textContent = formatCount(nonChatNotis.length);
+            badge.style.display = 'inline-block';
+        } else {
+            badge.textContent = '';
+            badge.style.display = 'none';
+        }
+    }
+    
+    function update_chat_notify_badge(data) {
+        const badge = document.querySelector('.chat-notify-badge');
+        if (!badge) return;
+    
+        const chatNotis = data.unread_list.filter(noti => noti.level === 'chat');
+        if (chatNotis.length > 0) {
+            badge.textContent = formatCount(chatNotis.length);
+            badge.style.display = 'inline-block';
+        } else {
+            badge.textContent = '';
+            badge.style.display = 'none';
+        }
+    }
+</script>
+{% register_notify_callbacks callbacks='fill_notification_list,fill_notification_badge,update_general_notify_badge,update_chat_notify_badge' refresh_period=10 fetch=5 %}
 
 </body>
 </html>

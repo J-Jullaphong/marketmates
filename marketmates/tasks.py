@@ -6,7 +6,9 @@ import yfinance as yf
 from celery import shared_task, signals
 from celery.schedules import crontab
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from notifications.signals import notify
 from selenium import webdriver
 
 from mysite.celery import app
@@ -87,4 +89,15 @@ def fetch_and_store_market_data():
     }
 
     cache.set('market_data', market_data, timeout=None)
+
+    User = get_user_model()
+
+    notify.send(
+        sender=User.objects.filter(is_staff=True).get(),
+        recipient=User.objects.all(),
+        verb='Market data updated',
+        description='New stock market information is now available.',
+        level='info'
+    )
+
     return market_data
