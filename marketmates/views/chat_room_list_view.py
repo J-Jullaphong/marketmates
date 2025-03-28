@@ -1,11 +1,17 @@
 import json
+from datetime import datetime, timedelta
 from operator import attrgetter
-from django.utils.timezone import now
-from django.views.generic import ListView
-from django.shortcuts import redirect
+
 from django.contrib.auth import get_user_model
-from ..models import ChatRoom, Message
+from django.db.models import Count, Max, Value
+from django.db.models.functions.comparison import Coalesce
+from django.shortcuts import redirect
+from django.utils import timezone
+from django.views.generic import ListView
+from notifications.models import Notification
+
 from ..forms import ChatRoomForm
+from ..models import ChatRoom, Message
 
 User = get_user_model()
 
@@ -18,7 +24,17 @@ class ChatRoomListView(ListView):
 
     def get_queryset(self):
         """Fetches the chat rooms where the current user is a member."""
-        return ChatRoom.objects.filter(members=self.request.user)
+        safe_min_datetime = timezone.make_aware(
+            datetime.min + timedelta(days=1))
+
+        return ChatRoom.objects.filter(members=self.request.user) \
+            .annotate(
+            latest_message_time=Coalesce(
+                Max('message__timestamp'),
+                Value(safe_min_datetime)
+            )
+        ) \
+            .order_by('-latest_message_time')
 
     def get_context_data(self, **kwargs):
         """
@@ -30,14 +46,23 @@ class ChatRoomListView(ListView):
         context = super().get_context_data(**kwargs)
         context['form'] = ChatRoomForm()
 
-        users = User.objects.exclude(id=self.request.user.id).exclude(is_staff=True)
+        users = User.objects.exclude(id=self.request.user.id).exclude(
+            is_staff=True)
         context['users_json'] = json.dumps([
             {"id": str(user.id), "username": user.username} for user in users
         ])
-        last_messages = list(Message.objects.order_by('chat_room', '-timestamp').distinct('chat_room'))
+        last_messages = list(
+            Message.objects.order_by('chat_room', '-timestamp').distinct(
+                'chat_room'))
         last_messages.sort(key=attrgetter('timestamp'), reverse=True)
         context['last_messages'] = last_messages
-        context['today_date'] = now().date().strftime("%Y-%m-%d")
+        context['today_date'] = timezone.now().date().strftime("%Y-%m-%d")
+
+        context['unread_notifications'] = Notification.objects.filter(
+            recipient=self.request.user,
+            unread=True,
+            level='chat'
+        ).values('target_object_id').annotate(unread_count=Count('id'))
 
         return context
 

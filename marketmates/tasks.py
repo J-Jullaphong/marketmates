@@ -30,6 +30,11 @@ def setup_periodic_tasks(sender, **kwargs):
         fetch_and_store_market_data.s(),
     )
 
+    sender.add_periodic_task(
+        crontab(minute='0', hour='18', day_of_week='1-5'),
+        send_market_notification.s(),
+    )
+
 
 def fetch_stock_data():
     """Fetch stock data from Yahoo Finance."""
@@ -90,14 +95,35 @@ def fetch_and_store_market_data():
 
     cache.set('market_data', market_data, timeout=None)
 
-    User = get_user_model()
+    return market_data
 
+
+@shared_task
+def send_market_notification():
+    """Send daily market update notification at 18:00 on weekdays."""
+    market_data = cache.get('market_data')
+
+    if not market_data:
+        return 'No market data available to notify.'
+
+    latest_close = market_data.get('latest_close')
+    percent_change = market_data.get('percent_change')
+
+    if latest_close is None or percent_change is None:
+        return 'Incomplete market data.'
+
+    message = (
+        f"SET Index closed at {latest_close:,.2f} "
+        f"({percent_change:+.2f}%) today."
+    )
+
+    User = get_user_model()
     notify.send(
-        sender=User.objects.filter(is_staff=True).get(),
+        sender=User.objects.filter(is_staff=True).first(),
         recipient=User.objects.all(),
-        verb='Market data updated',
-        description='New stock market information is now available.',
+        verb='SET Index Summary',
+        description=message,
         level='info'
     )
 
-    return market_data
+    return 'Market notification sent with SET index and change.'

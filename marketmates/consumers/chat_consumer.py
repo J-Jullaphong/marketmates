@@ -4,15 +4,15 @@ import uuid
 
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from notifications.signals import notify
 from django.conf import settings
 from django.core.files.base import ContentFile
+from notifications.signals import notify
 
-from .models import Message, ChatRoom, User
+from ..models import Message, ChatRoom, User
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
-
+    """WebSocket consumer for handling real-time chat functionality."""
     async def connect(self):
         """Handles WebSocket connection."""
         self.user = self.scope["user"]
@@ -89,6 +89,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 {'type': 'chat_message', **message_payload}
             )
 
+            other_members = await self.get_other_members()
+
+            for member in other_members:
+                user_group = f"user_{member.username.replace(' ', '_')}"
+                await self.channel_layer.group_send(
+                    user_group,
+                    {
+                        'type': 'room_preview',
+                        'room_id': str(self.chat_room.id),
+                        'room_name': self.chat_room.name,
+                        'sender': sender_username,
+                        'message': message_payload['message'],
+                        'timestamp': message_payload['timestamp'],
+                        'image_url': message_payload.get('image_url'),
+                    }
+                )
+
     async def chat_message(self, event):
         """Sends a message (text or image) to WebSocket."""
         message_data = {
@@ -102,10 +119,27 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         await self.send(text_data=json.dumps(message_data))
 
+    async def room_preview(self, event):
+        """Receives and sends real-time preview data for a chat room message."""
+        await self.send(text_data=json.dumps({
+            'type': 'room_preview',
+            'room_id': event['room_id'],
+            'room_name': event['room_name'],
+            'sender': event['sender'],
+            'message': event['message'],
+            'timestamp': event['timestamp'],
+            'image_url': event.get('image_url')
+        }))
+
     @sync_to_async
     def get_chat_room(self):
         """Fetches the chat room instance."""
         return ChatRoom.objects.filter(id=self.room_id).first()
+
+    @sync_to_async
+    def get_other_members(self):
+        """Retrieves a list of other members in the chat room, excluding the current user."""
+        return list(self.chat_room.members.exclude(id=self.user.id))
 
     @sync_to_async
     def get_previous_messages(self):
@@ -132,7 +166,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
             other_members = self.chat_room.members.exclude(id=self.user.id)
             if other_members.exists():
-                preview = message_text[:100] + "..." if message_text else "Image message"
+                preview = message_text[
+                          :100] + "..." if message_text else "Image message"
                 notify.send(
                     sender=self.user,
                     recipient=other_members,

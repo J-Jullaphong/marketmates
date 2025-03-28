@@ -7,6 +7,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
+from notifications.models import Notification
 
 from ..models import ChatRoom, User
 
@@ -21,6 +22,12 @@ class ChatRoomView(View):
             messages.warning(request,
                              'Sorry, You are not a member of this chat room.')
             return redirect('marketmates:chat_room_list')
+
+        Notification.objects.filter(
+            recipient=request.user,
+            unread=True,
+            target_object_id=room.id,
+        ).mark_all_as_read()
 
         members = room.members.all()
         users = User.objects.exclude(id__in=members).exclude(

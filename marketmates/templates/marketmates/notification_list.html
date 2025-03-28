@@ -8,7 +8,7 @@
 
   <div class="space-y-4">
     {% for notification in notifications %}
-      {% if "Market data updated" in notification.verb %}
+      {% if "SET Index Summary" in notification.verb %}
         <a href="{% url 'marketmates:market_update' %}" class="text-decoration-none text-reset">
       {% elif "commented on your post" in notification.verb or "replied to your post" in notification.description %}
         <a href="{{ notification.target.get_absolute_url }}" class="text-decoration-none text-reset">

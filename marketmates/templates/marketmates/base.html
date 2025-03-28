@@ -146,12 +146,18 @@
                 <li><a class="dropdown-item" href="#"><i class="bi bi-mortarboard-fill"></i> Learning</a></li>
                 <li><hr class="dropdown-divider"></li>
 
-                <li><a class="dropdown-item" href="{% url 'marketmates:chat_room_list' %}"><i class="bi bi-chat-dots-fill"></i> Chat
-                      <span class="badge bg-danger text-white chat-notify-badge"></span>
-                </a></li>
-                <li><a class="dropdown-item" href="{% url 'marketmates:notification_list' %}"><i class="bi bi-bell-fill"></i> Notifications
-                      <span class="badge bg-danger text-white general-notify-badge"></span>
-                </a></li>
+                <li>
+                  <a class="dropdown-item d-flex justify-content-between align-items-center" href="{% url 'marketmates:chat_room_list' %}">
+                    <span><i class="bi bi-chat-dots-fill me-2"></i> Chat</span>
+                    <span class="badge bg-danger text-white chat-notify-badge" style="display: none;"></span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item d-flex justify-content-between align-items-center" href="{% url 'marketmates:notification_list' %}">
+                    <span><i class="bi bi-bell-fill me-2"></i> Notifications</span>
+                    <span class="badge bg-danger text-white general-notify-badge" style="display: none;"></span>
+                  </a>
+                </li>
                 {% if user.is_authenticated %}
                     <li><a class="dropdown-item" href="{% url 'marketmates:profile' %}"><i class="bi bi-person-circle"></i> Profile</a></li>
                     <li><a class="dropdown-item" href="#"><i class="bi bi-gear-fill"></i> Settings</a></li>
@@ -193,31 +199,33 @@
     }
     
     function update_general_notify_badge(data) {
-        const badge = document.querySelector('.general-notify-badge');
-        if (!badge) return;
-    
+        const badges = document.querySelectorAll('.general-notify-badge');
         const nonChatNotis = data.unread_list.filter(noti => noti.level !== 'chat');
-        if (nonChatNotis.length > 0) {
-            badge.textContent = formatCount(nonChatNotis.length);
-            badge.style.display = 'inline-block';
-        } else {
-            badge.textContent = '';
-            badge.style.display = 'none';
-        }
+
+        badges.forEach(badge => {
+            if (nonChatNotis.length > 0) {
+                badge.textContent = formatCount(nonChatNotis.length);
+                badge.style.display = 'inline-block';
+            } else {
+                badge.textContent = '';
+                badge.style.display = 'none';
+            }
+        });
     }
     
     function update_chat_notify_badge(data) {
-        const badge = document.querySelector('.chat-notify-badge');
-        if (!badge) return;
-    
+        const badges = document.querySelectorAll('.chat-notify-badge');
         const chatNotis = data.unread_list.filter(noti => noti.level === 'chat');
-        if (chatNotis.length > 0) {
-            badge.textContent = formatCount(chatNotis.length);
-            badge.style.display = 'inline-block';
-        } else {
-            badge.textContent = '';
-            badge.style.display = 'none';
-        }
+
+        badges.forEach(badge => {
+            if (chatNotis.length > 0) {
+                badge.textContent = formatCount(chatNotis.length);
+                badge.style.display = 'inline-block';
+            } else {
+                badge.textContent = '';
+                badge.style.display = 'none';
+            }
+        });
     }
 </script>
 {% register_notify_callbacks callbacks='fill_notification_list,fill_notification_badge,update_general_notify_badge,update_chat_notify_badge' refresh_period=10 fetch=5 %}
