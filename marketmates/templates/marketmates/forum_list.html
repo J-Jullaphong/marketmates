@@ -5,7 +5,8 @@
     <div class="container-fluid mt-4">
         <div class="row">
             <!-- Left Sidebar: Popular Tags & Private Groups -->
-            <aside class="col-lg-3 col-md-4 d-none d-md-block sticky-sidebar d-flex flex-column align-items-start px-3 mx-auto" style="max-width: 250px;">
+            <aside class="col-lg-3 col-md-4 d-none d-md-block sticky-sidebar d-flex flex-column align-items-start px-3 mx-auto"
+                   style="max-width: 250px;">
                 <section class="mb-4">
                     <h5 class="fw-bold text-primary">Popular Tags</h5>
                     <ul class="list-group">
@@ -101,6 +102,19 @@
                                             {{ forum.title }}
                                         </a>
                                     </h5>
+                                    <div>
+                                        <!-- Favorite Button -->
+                                        <button class="btn p-0 border-0 bg-transparent position-absolute top-0 end-0 m-3 trigger-fav-modal"
+                                                data-forum-id="{{ forum.id }}">
+                                            {% if forum.id in favorite_forum_ids %}
+                                                <i class="bi bi-heart-fill text-danger fs-5"></i>
+                                                <span class="text-danger ms-1">Favorited</span>
+                                            {% else %}
+                                                <i class="bi bi-heart text-secondary fs-5"></i>
+                                                <span class="text-secondary ms-1">Add to Favorites</span>
+                                            {% endif %}
+                                        </button>
+                                    </div>
                                     <p class="text-muted small mt-1 d-flex align-items-center">
                                         {% if forum.created_by.profile_picture %}
                                             <img src="{{ forum.created_by.profile_picture.url }}"
@@ -145,9 +159,78 @@
                     <p class="text-muted">No forums found matching your search.</p>
                 {% endif %}
             </main>
+            <!-- Favorite Confirm Modal -->
+            <div class="modal fade" id="confirmFavModal" tabindex="-1" aria-labelledby="favModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="favModalLabel">Confirm Action</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" id="favModalBody">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                            <button type="button" class="btn btn-primary" id="confirmFavBtn">Yes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
 
             <!-- Right Sidebar: Empty-->
             <div class="col-lg-3"></div>
+
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let selectedForumId = null;
+            let isCurrentlyFavorited = false;
+
+            const favModal = new bootstrap.Modal(document.getElementById('confirmFavModal'));
+            const modalTitle = document.getElementById('favModalLabel');
+            const modalBody = document.getElementById('favModalBody');
+            const confirmBtn = document.getElementById('confirmFavBtn');
+
+            document.querySelectorAll('.trigger-fav-modal').forEach(button => {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    selectedForumId = this.dataset.forumId;
+                    const icon = this.querySelector('i');
+
+                    isCurrentlyFavorited = icon.classList.contains('bi-heart-fill');
+
+                    if (isCurrentlyFavorited) {
+                        modalTitle.textContent = "Remove from Favorites";
+                        modalBody.textContent = "Do you want to remove this forum from your favorites?";
+                    } else {
+                        modalTitle.textContent = "Add to Favorites";
+                        modalBody.textContent = "Do you want to save this forum to your favorites?";
+                    }
+
+                    favModal.show();
+                });
+            });
+
+            confirmBtn.addEventListener('click', function () {
+                if (selectedForumId) {
+                    fetch("{% url 'marketmates:toggle_favorite' %}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}",
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: `forum_id=${selectedForumId}`
+                    })
+                        .then(() => {
+                            favModal.hide();
+                            window.location.reload();
+                        });
+                }
+            });
+        });
+    </script>
 {% endblock %}

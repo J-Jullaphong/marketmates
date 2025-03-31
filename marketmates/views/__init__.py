@@ -14,3 +14,5 @@ from .unavailable_view import UnavailableView
 from .expert_detail_view import ExpertDetailView
 from .expert_list_view import ExpertListView
 from .notification_view import NotificationView
+from .favorite_forum_list_view import FavoriteForumListView
+from .favorite_forum_toggle_view import ToggleFavoriteForumView

@@ -9,7 +9,8 @@
     <div class="container-fluid mt-4 px-0">
         <div class="row g-3">
             <!-- Left Sidebar: Popular Tags & Private Groups -->
-            <aside class="col-lg-3 col-md-4 d-none d-md-block sticky-sidebar d-flex flex-column align-items-start px-3 mx-auto" style="max-width: 250px;">
+            <aside class="col-lg-3 col-md-4 d-none d-md-block sticky-sidebar d-flex flex-column align-items-start px-3 mx-auto"
+                   style="max-width: 250px;">
                 <section class="mb-4">
                     <h5 class="fw-bold text-primary">Popular Tags</h5>
                     <ul class="list-group">
@@ -17,7 +18,8 @@
                             <li class="list-group-item border-0 d-flex align-items-center">
                                 <a href="{% url 'marketmates:forum_list' %}?q=%23{{ tag.tag_name }}"
                                    class="text-decoration-none">
-                                    <span class="badge me-2" style="background-color: #5D5FEF;">#{{ tag.tag_name }}</span>
+                                    <span class="badge me-2"
+                                          style="background-color: #5D5FEF;">#{{ tag.tag_name }}</span>
                                 </a>
                                 <small class="text-muted">{{ tag.forum_count }} Posts</small>
                             </li>
@@ -199,7 +201,7 @@
                                     </div>
                                 {% endif %}
                             {% endwith %}
-                
+
                             <!-- Forum Details -->
                             <div class="flex-grow-1">
                                 <h5 class="card-title fw-bold">
@@ -208,9 +210,22 @@
                                         {{ forum.title }}
                                     </a>
                                 </h5>
+                                <div>
+                                    <button class="btn p-0 border-0 bg-transparent position-absolute top-0 end-0 m-3 trigger-fav-modal"
+                                            data-forum-id="{{ forum.id }}">
+                                        {% if forum.id in favorite_forum_ids %}
+                                            <i class="bi bi-heart-fill text-danger fs-5"></i>
+                                            <span class="text-danger ms-1">Favorited</span>
+                                        {% else %}
+                                            <i class="bi bi-heart text-secondary fs-5"></i>
+                                            <span class="text-secondary ms-1">Add to Favorites</span>
+                                        {% endif %}
+                                    </button>
+                                </div>
                                 <p class="text-muted small mt-1 d-flex align-items-center">
                                     {% if forum.created_by.profile_picture %}
-                                        <img src="{{ forum.created_by.profile_picture.url }}" alt="{{ forum.created_by.username }}"
+                                        <img src="{{ forum.created_by.profile_picture.url }}"
+                                             alt="{{ forum.created_by.username }}"
                                              class="rounded-circle me-2"
                                              style="width: 20px; height: 20px; object-fit: cover;">
                                     {% else %}
@@ -221,25 +236,26 @@
                                     <i class="bi bi-calendar text-secondary me-1"></i>
                                     <span class="ms-1">{{ forum.created_at|date:"M d, Y" }}</span>
                                 </p>
-                
+
                                 <!-- Tags & Comments -->
                                 <div class="d-flex justify-content-between align-items-center mt-2">
                                     <div class="d-flex flex-wrap">
                                         {% for tag in forum.tags.all|slice:":3" %}
-                                            <a href="?q=%23{{ tag.tag_name }}" class="badge text-white me-1 text-decoration-none mt-2"
+                                            <a href="?q=%23{{ tag.tag_name }}"
+                                               class="badge text-white me-1 text-decoration-none mt-2"
                                                style="background-color: #5D5FEF;">
                                                 #{{ tag.tag_name }}
                                             </a>
                                         {% endfor %}
                                     </div>
                                     <p class="text-muted small mb-0 mt-2 text-end" style="width: 150px;">
-                                        <i class="bi bi-chat-dots-fill text-secondary me-1"></i> 
+                                        <i class="bi bi-chat-dots-fill text-secondary me-1"></i>
                                         {% if forum.comment_set.count > 99 %}
                                             99+
                                         {% else %}
                                             {{ forum.comment_set.count }}
                                         {% endif %}
-                                        Comments                                    
+                                        Comments
                                     </p>
                                 </div>
                             </div>
@@ -271,6 +287,24 @@
         </div>
     </div>
 
+    <div class="modal fade" id="confirmFavModal" tabindex="-1" aria-labelledby="favModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="favModalLabel">Confirm Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="favModalBody">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                    <button type="button" class="btn btn-primary" id="confirmFavBtn">Yes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         function updateData() {
             const selectedOption = document.getElementById("dataSelect").value;
@@ -284,5 +318,55 @@
                 document.getElementById("quickPostForm").submit();
             }
         }
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let selectedForumId = null;
+            let isCurrentlyFavorited = false;
+
+            const favModal = new bootstrap.Modal(document.getElementById('confirmFavModal'));
+            const modalTitle = document.getElementById('favModalLabel');
+            const modalBody = document.getElementById('favModalBody');
+            const confirmBtn = document.getElementById('confirmFavBtn');
+
+            document.querySelectorAll('.trigger-fav-modal').forEach(button => {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    selectedForumId = this.dataset.forumId;
+                    const icon = this.querySelector('i');
+
+                    isCurrentlyFavorited = icon.classList.contains('bi-heart-fill');
+
+                    if (isCurrentlyFavorited) {
+                        modalTitle.textContent = "Remove from Favorites";
+                        modalBody.textContent = "Do you want to remove this forum from your favorites?";
+                    } else {
+                        modalTitle.textContent = "Add to Favorites";
+                        modalBody.textContent = "Do you want to save this forum to your favorites?";
+                    }
+
+                    favModal.show();
+                });
+            });
+
+            confirmBtn.addEventListener('click', function () {
+                if (selectedForumId) {
+                    fetch("{% url 'marketmates:toggle_favorite' %}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}",
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: `forum_id=${selectedForumId}`
+                    })
+                        .then(() => {
+                            favModal.hide();
+                            window.location.reload();
+                        });
+                }
+            });
+        });
     </script>
 {% endblock %}

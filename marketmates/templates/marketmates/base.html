@@ -108,7 +108,7 @@
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="{% url 'marketmates:profile' %}">Profile</a></li>
-                        <li><a class="dropdown-item" href="#">Settings</a></li>
+                        <li><a class="dropdown-item" href="{% url 'marketmates:favorite_forum_list' %}">Favorite Forums</a></li>
                         <li>
                             <hr class="dropdown-divider">
                         </li>
@@ -160,7 +160,7 @@
                 </li>
                 {% if user.is_authenticated %}
                     <li><a class="dropdown-item" href="{% url 'marketmates:profile' %}"><i class="bi bi-person-circle"></i> Profile</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-gear-fill"></i> Settings</a></li>
+                    <li><a class="dropdown-item" href="{% url 'marketmates:favorite_forum_list' %}"><i class="bi bi-gear-fill"></i>Favorite Forums</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <form method="POST" action="{% url 'marketmates:logout' %}?next=/">

@@ -1,0 +1,111 @@
+{% extends "marketmates/base.html" %}
+{% block content %}
+    <div class="container-fluid mt-4">
+        <h2 class="mb-4">My Favorite Forums</h2>
+
+        {% if favorites %}
+            {% for fav in favorites %}
+                {% with forum=fav.forum %}
+                    <article class="card shadow-sm border-0 mb-3 position-relative">
+                        <div class="card-body d-flex align-items-start">
+
+                            {% with forum.get_first_image as image_url %}
+                                {% if image_url %}
+                                    <img src="{{ image_url }}" class="rounded me-3 flex-shrink-0"
+                                         style="width: 100px; height: 100px; object-fit: cover;">
+                                {% else %}
+                                    <div class="rounded bg-light d-flex align-items-center justify-content-center me-3 flex-shrink-0"
+                                         style="width: 100px; height: 100px;">
+                                        <i class="bi bi-card-image text-muted fs-1"></i>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+
+                            <div class="flex-grow-1">
+                                <h5 class="card-title fw-bold mb-1 d-flex justify-content-between align-items-start">
+                                    <a href="{% url 'marketmates:forum_detail' forum.id %}"
+                                       class="text-dark text-decoration-none">
+                                        {{ forum.title }}
+                                    </a>
+
+                                    <button class="btn p-0 border-0 bg-transparent trigger-unfav"
+                                            data-forum-id="{{ forum.id }}" title="Remove from Favorites">
+                                        <i class="bi bi-heart-fill text-danger fs-5"></i>
+                                        <span class="text-secondary ms-1">Remove</span>
+                                    </button>
+                                </h5>
+
+                                <p class="text-muted small mb-2 d-flex align-items-center">
+                                    <i class="bi bi-person-circle me-1"></i> <strong
+                                        class="me-2">{{ forum.created_by.username }}</strong>
+                                    <i class="bi bi-calendar ms-2 me-1"></i> {{ forum.created_at|date:"M d, Y" }}
+                                    <i class="bi bi-chat-dots-fill ms-3 me-1"></i> {{ forum.comment_set.count }}
+                                    comments
+                                </p>
+
+                                <div class="d-flex flex-wrap">
+                                    {% for tag in forum.tags.all|slice:":3" %}
+                                        <a href="?q=%23{{ tag.tag_name }}"
+                                           class="badge text-white me-1 text-decoration-none mt-1"
+                                           style="background-color: #5D5FEF;">
+                                            #{{ tag.tag_name }}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                {% endwith %}
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">You haven’t added any favorite forums yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="modal fade" id="confirmUnfavModal" tabindex="-1" aria-labelledby="unfavModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="unfavModalLabel">Remove Favorite</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Do you want to remove this forum from your favorites?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                    <button type="button" class="btn btn-danger" id="confirmUnfavBtn">Yes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let selectedForumId = null;
+            const unfavModal = new bootstrap.Modal(document.getElementById('confirmUnfavModal'));
+
+            document.querySelectorAll('.trigger-unfav').forEach(button => {
+                button.addEventListener('click', function () {
+                    selectedForumId = this.dataset.forumId;
+                    unfavModal.show();
+                });
+            });
+            document.getElementById('confirmUnfavBtn').addEventListener('click', function () {
+                if (selectedForumId) {
+                    fetch("{% url 'marketmates:toggle_favorite' %}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}",
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: `forum_id=${selectedForumId}`
+                    })
+                        .then(() => {
+                            window.location.reload();
+                        });
+                }
+            });
+        });
+    </script>
+{% endblock %}
