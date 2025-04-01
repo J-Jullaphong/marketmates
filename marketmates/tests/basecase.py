@@ -2,7 +2,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
-from marketmates.models import Forum, Tag, FavoriteForum
+from marketmates.models import Forum, Tag, FavoriteForum, Comment, Expert
 
 
 class BaseCase(TestCase):
@@ -10,67 +10,161 @@ class BaseCase(TestCase):
     Base test case for integration tests in the MarketMates app.
 
     Provides:
-    - A test user (authenticated)
-    - Three tags (tag-1, tag-2, tag-3)
-    - Three forums (forum-1, forum-2, forum-3) with different created_at dates and tags
-    - One favorite forum (forum-1)
+    - 2 normal users (user1, user2)
+    - 2 expert users (expert_user1, expert_user2) with approved Expert profiles
+    - 3 tags (tag-1, tag-2, tag-3)
+    - 4 normal forums (forum-1 to forum-4), created by user1, each with different created_at dates and tag combinations
+    - 4 expert forums (expert-forum-1 to expert-forum-4), created by expert_user1 and expert_user2
+    - 1 favorite forum (forum-1), favorited by user1
+    - 2 comments: one on forum-1, one on forum-2 (both by user1)
 
-    This base is designed for reusability in other views.
+    This base case is designed for reuse across views.
     """
 
     def setUp(self):
-        """
-        Create shared test data:
-        - Logs in a test user
-        - Creates 3 tags
-        - Creates 3 forums with increasing created_at timestamps
-        - Assigns tags to forums
-        - Marks forum-1 as a favorite
-        """
-        self.client = Client()
+        """Set up shared test data"""
         User = get_user_model()
 
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='testpass123',
+        # Normal User
+        self.user1 = User.objects.create_user(
+            username='user1',
+            email='user1@example.com',
+            password='#password123',
             status='Active'
         )
-        self.client.login(username='testuser', password='testpass123')
+        self.client1 = Client()
+        self.client1.login(username='user1', password='#password123')
+
+        self.user2 = User.objects.create_user(
+            username='user2',
+            email='user2@example.com',
+            password='#password123',
+            status='Active'
+        )
+        self.client2 = Client()
+        self.client2.login(username='user2', password='#password123')
 
         # Tags
         self.tag1 = Tag.objects.create(tag_name="tag-1")
         self.tag2 = Tag.objects.create(tag_name="tag-2")
         self.tag3 = Tag.objects.create(tag_name="tag-3")
 
-        # Forums
+        # Forums are created by normal user (based on user1)
         now = timezone.now()
         self.forum1 = Forum.objects.create(
             title="forum-1",
             description="desc-1",
-            created_by=self.user,
-            created_at=now - timedelta(days=3)
+            created_by=self.user1,
+            created_at=now - timedelta(days=4)
         )
         self.forum1.tags.set([self.tag1])
 
         self.forum2 = Forum.objects.create(
             title="forum-2",
             description="desc-2",
-            created_by=self.user,
-            created_at=now - timedelta(days=2)
+            created_by=self.user1,
+            created_at=now - timedelta(days=3)
         )
         self.forum2.tags.set([self.tag1, self.tag2])
 
         self.forum3 = Forum.objects.create(
             title="forum-3",
             description="desc-3",
-            created_by=self.user,
-            created_at=now - timedelta(days=1)
+            created_by=self.user1,
+            created_at=now - timedelta(days=2)
         )
         self.forum3.tags.set([self.tag3])
 
+        self.forum4 = Forum.objects.create(
+            title="forum-4",
+            description="desc-4",
+            created_by=self.user1,
+            created_at=now - timedelta(days=1)
+        )
+
         # Favorite forum-1
         self.favorite = FavoriteForum.objects.create(
-            user=self.user,
+            user=self.user1,
             forum=self.forum1
+        )
+
+        # Comment on forum-1
+        self.comment1 = Comment.objects.create(
+            forum=self.forum1,
+            user=self.user1,
+            comment_content="This is a comment on forum-1"
+        )
+
+        # Comment on forum-2
+        self.comment2 = Comment.objects.create(
+            forum=self.forum2,
+            user=self.user1,
+            comment_content="This is a comment on forum-2"
+        )
+
+        # Experts
+        self.expert_user1 = User.objects.create_user(
+            username='expert_user1',
+            email='expert-user1@example.com',
+            password='#password123',
+            status='Active'
+        )
+
+        self.expert1 = Expert.objects.create(
+            designation="desi-1",
+            rank=1,
+            user=self.expert_user1,
+            status="Approved",
+        )
+
+        self.client3 = Client()
+        self.client3.login(username='expert_user1', password='#password123')
+
+        self.expert_user2 = User.objects.create_user(
+            username='expert_user2',
+            email='expert-user2@example.com',
+            password='#password123',
+            status='Active'
+        )
+
+        self.expert2 = Expert.objects.create(
+            designation="desi-2",
+            rank=2,
+            user=self.expert_user2,
+            status="Approved",
+        )
+
+        self.client4 = Client()
+        self.client4.login(username='expert_user2', password='#password123')
+
+        # Expert Forums are created by expert user (based on expert_user1)
+        self.expert_forum1 = Forum.objects.create(
+            title="expert-forum-1",
+            description="expert-desc-1",
+            created_by=self.expert_user1,
+            created_at=now - timedelta(days=4)
+        )
+        self.expert_forum1.tags.set([self.tag1])
+
+        self.expert_forum2 = Forum.objects.create(
+            title="expert-forum-2",
+            description="expert-desc-2",
+            created_by=self.expert_user1,
+            created_at=now - timedelta(days=3)
+        )
+        self.expert_forum2.tags.set([self.tag1, self.tag2])
+
+        self.expert_forum3 = Forum.objects.create(
+            title="expert-forum-3",
+            description="expert-desc-3",
+            created_by=self.expert_user2,
+            created_at=now - timedelta(days=2)
+        )
+        self.expert_forum2.tags.set([self.tag3])
+
+        self.expert_forum4 = Forum.objects.create(
+            title="expert-forum-4",
+            description="expert-desc-4",
+            created_by=self.expert_user2,
+            created_at=now - timedelta(days=1)
         )
