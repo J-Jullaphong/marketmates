@@ -2,7 +2,8 @@ from datetime import timedelta
 from django.utils import timezone
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
-from marketmates.models import Forum, Tag, FavoriteForum, Comment, Expert
+from notifications.models import Notification
+from marketmates.models import Forum, Tag, FavoriteForum, Comment, Expert, ChatRoom
 
 
 class BaseCase(TestCase):
@@ -10,13 +11,15 @@ class BaseCase(TestCase):
     Base test case for integration tests in the MarketMates app.
 
     Provides:
-    - 2 normal users (user1, user2)
-    - 2 expert users (expert_user1, expert_user2) with approved Expert profiles
-    - 3 tags (tag-1, tag-2, tag-3)
-    - 4 normal forums (forum-1 to forum-4), created by user1, each with different created_at dates and tag combinations
-    - 4 expert forums (expert-forum-1 to expert-forum-4), created by expert_user1 and expert_user2
+    - 2 regular users (user1, user2) with active status
+    - 2 expert users (expert_user1, expert_user2), each linked to an approved Expert profile
+    - 3 tags (tag-1, tag-2, tag-3) for categorizing forums
+    - 4 regular forums (forum-1 to forum-4), created by user1, each tagged and created on different days
+    - 4 expert forums (expert-forum-1 to expert-forum-4), created by expert users
+    - 2 comments created by user1 on forum-1 and forum-2
     - 1 favorite forum (forum-1), favorited by user1
-    - 2 comments: one on forum-1, one on forum-2 (both by user1)
+    - 3 chat rooms (chatroom-1 to chatroom-3), each with different member combinations
+    - 2 notifications with level="info", targeted to user1
 
     This base case is designed for reuse across views.
     """
@@ -167,4 +170,40 @@ class BaseCase(TestCase):
             description="expert-desc-4",
             created_by=self.expert_user2,
             created_at=now - timedelta(days=1)
+        )
+
+        # ChatRooms
+        self.chatroom1 = ChatRoom.objects.create(
+            name="chatroom-1",
+            capacity=15
+        )
+        self.chatroom1.members.set([self.user1, self.user2])
+
+        self.chatroom2 = ChatRoom.objects.create(
+            name="chatroom-2",
+            capacity=10
+        )
+        self.chatroom2.members.set([self.user1, self.expert_user1])
+
+        self.chatroom3 = ChatRoom.objects.create(
+            name="chatroom-3",
+            capacity=5
+        )
+        self.chatroom3.members.set([self.user2, self.expert_user2])
+
+        # Notifications
+        self.notification1 = Notification.objects.create(
+            recipient=self.user1,
+            actor=self.user2,
+            verb="replied to your forum",
+            target=self.forum1,
+            level="info"
+        )
+
+        self.notification2 = Notification.objects.create(
+            recipient=self.user1,
+            actor=self.expert_user1,
+            verb="mentioned you in a comment",
+            target=self.forum2,
+            level="info"
         )
