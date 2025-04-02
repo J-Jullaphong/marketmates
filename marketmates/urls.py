@@ -11,6 +11,9 @@ urlpatterns = [
     path("create-forum/", CreateForumView.as_view(), name="create_forum"),
     path("forums/", ForumListView.as_view(), name="forum_list"),
 
+    path('toggle-favorite/', ToggleFavoriteForumView.as_view(), name='toggle_favorite'),
+    path('my-favorites/', FavoriteForumListView.as_view(), name='favorite_forum_list'),
+
     path("market/", MarketUpdateView.as_view(), name="market_update"),
 
     path("chat/", ChatRoomListView.as_view(), name="chat_room_list"),
@@ -27,7 +30,4 @@ urlpatterns = [
 
     path("experts/", ExpertListView.as_view(), name="expert_list"),
     path("experts/<uuid:pk>/", ExpertDetailView.as_view(), name="expert_detail"),
-
-    path('toggle-favorite/', ToggleFavoriteForumView.as_view(), name='toggle_favorite'),
-    path('my-favorites/', FavoriteForumListView.as_view(), name='favorite_forum_list'),
 ]

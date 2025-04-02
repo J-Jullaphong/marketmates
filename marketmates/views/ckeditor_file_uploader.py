@@ -6,14 +6,13 @@ from django.http import JsonResponse
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_POST
 from django_ckeditor_5.forms import UploadFileForm
-from django_ckeditor_5.views import get_storage_class, image_verify, \
-    NoImageException
+from django_ckeditor_5.views import get_storage_class, image_verify, NoImageException
 
 storage = get_storage_class()
 
 
 def overrided_handle_uploaded_file(file):
-    """Handles file uploads by renaming the file to a UUID while preserving its extension."""
+    """Method for renaming uploaded file with UUID and returning its URL."""
     file_storage = storage()
     ext = os.path.splitext(file.name)[1]
     file_uuid = f"{uuid.uuid4()}{ext}"
@@ -24,10 +23,9 @@ def overrided_handle_uploaded_file(file):
 
 @require_POST
 def ckeditor_file_uploader(request):
-    """Handles the upload request for CKEditor 5."""
+    """Method for handling CKEditor 5 file uploads with optional image verification."""
     form = UploadFileForm(request.POST, request.FILES)
-    allow_all_file_types = getattr(settings, "CKEDITOR_5_ALLOW_ALL_FILE_TYPES",
-                                   False)
+    allow_all_file_types = getattr(settings, "CKEDITOR_5_ALLOW_ALL_FILE_TYPES", False)
 
     if not allow_all_file_types:
         try:
@@ -40,10 +38,6 @@ def ckeditor_file_uploader(request):
         return JsonResponse({"url": url})
 
     if form.errors["upload"]:
-        return JsonResponse(
-            {"error": {"message": form.errors["upload"][0]}},
-            status=400,
-        )
+        return JsonResponse({"error": {"message": form.errors["upload"][0]}}, status=400,)
 
-    return JsonResponse({"error": {"message": _("Invalid form data")}},
-                        status=400)
+    return JsonResponse({"error": {"message": _("Invalid form data")}},status=400)

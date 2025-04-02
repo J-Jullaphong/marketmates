@@ -5,17 +5,18 @@ from django.utils.text import Truncator
 from django.utils.html import strip_tags
 from notifications.signals import notify
 
-
 from ..models import Forum, Comment, Tag
 from ..forms import CommentForm
 
 
 class ForumDetailView(DetailView):
+    """View for displaying a forum post with its comments."""
     model = Forum
     template_name = "marketmates/forum_detail.html"
     context_object_name = "forum"
 
     def get_context_data(self, **kwargs):
+        """Returns forum details, comments, popular tags, and comment form."""
         context = super().get_context_data(**kwargs)
         context["comments"] = Comment.objects.filter(forum=self.object).order_by("created_at")
         context["tags"] = Tag.objects.annotate(forum_count=Count("forum")).order_by("-forum_count")[:5]
@@ -23,6 +24,7 @@ class ForumDetailView(DetailView):
         return context
 
     def post(self, request, *args, **kwargs):
+        """Handles the POST request to add new comment."""
         self.object = self.get_object()
         form = CommentForm(request.POST, request.FILES)
 

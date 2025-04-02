@@ -14,13 +14,15 @@ from ..models import ChatRoom, User
 
 @method_decorator(login_required, name="dispatch")
 class ChatRoomView(View):
-    """View to handle the display of a chat room."""
+    """
+    View for displaying a specific chat room.
+    Shows members, available users to add, and marks related notifications as read.
+    """
     def get(self, request, room_id, *args, **kwargs):
-        """Retrieve the chat room details and render the chat room template."""
+        """Returns the chat room page for the given room ID if the user is a member."""
         room = get_object_or_404(ChatRoom, id=room_id)
         if not room.members.filter(id=self.request.user.id).exists():
-            messages.warning(request,
-                             'Sorry, You are not a member of this chat room.')
+            messages.warning(request,'Sorry, You are not a member of this chat room.')
             return redirect('marketmates:chat_room_list')
 
         Notification.objects.filter(
@@ -30,24 +32,21 @@ class ChatRoomView(View):
         ).mark_all_as_read()
 
         members = room.members.all()
-        users = User.objects.exclude(id__in=members).exclude(
-            is_staff=True)
+        users = User.objects.exclude(id__in=members).exclude(is_staff=True)
 
         return render(request, 'marketmates/chat_room.html', {
             'room_name': room.name,
             'room_id': room.id,
             'current_user_username': request.user.username,
             'members': members,
-            'users_json': json.dumps([
-                {"id": str(user.id), "username": user.username} for user in users
-            ])
+            'users_json': json.dumps([{"id": str(user.id), "username": user.username} for user in users])
         })
 
 
 @csrf_exempt
 @login_required
 def add_members(request, room_id):
-    """Add members to a chat room."""
+    """Method for adding new members to a chat room."""
     if request.method != "POST":
         return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
 
@@ -70,7 +69,7 @@ def add_members(request, room_id):
 @csrf_exempt
 @login_required
 def remove_member(request, room_id, user_id):
-    """Remove a member from a chat room."""
+    """Method for removing a member from a chat room."""
     if request.method != "POST":
         return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
 
