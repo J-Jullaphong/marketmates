@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
-from django.utils.decorators import method_decorator
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from notifications.models import Notification
@@ -12,8 +12,7 @@ from notifications.models import Notification
 from ..models import ChatRoom, User
 
 
-@method_decorator(login_required, name="dispatch")
-class ChatRoomView(View):
+class ChatRoomView(LoginRequiredMixin, View):
     """
     View for displaying a specific chat room.
     Shows members, available users to add, and marks related notifications as read.

@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from operator import attrgetter
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Max, Value
 from django.db.models.functions.comparison import Coalesce
 from django.shortcuts import redirect
@@ -16,7 +17,7 @@ from ..models import ChatRoom, Message
 User = get_user_model()
 
 
-class ChatRoomListView(ListView):
+class ChatRoomListView(LoginRequiredMixin, ListView):
     """View for displaying a list of chat rooms."""
     model = ChatRoom
     template_name = 'marketmates/chat_room_list.html'

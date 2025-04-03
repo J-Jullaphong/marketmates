@@ -1,7 +1,7 @@
 from django.db.models import Count, Q
 from django.views.generic import ListView
 
-from ..models import Forum, Tag, ChatRoom, FavoriteForum
+from ..models import Forum, Tag, FavoriteForum, Expert
 
 
 class ForumListView(ListView):
@@ -26,7 +26,7 @@ class ForumListView(ListView):
         return queryset
 
     def get_context_data(self, **kwargs):
-        """Adds favorite forum, top tags and current query, and sort order to the context."""
+        """Adds favorite forum, top tags and expert, and sort order to the context."""
         context = super().get_context_data(**kwargs)
 
         if self.request.user.is_authenticated:
@@ -36,7 +36,7 @@ class ForumListView(ListView):
             context["favorite_forum_ids"] = []
 
         context["tags"] = Tag.objects.annotate(forum_count=Count("forum")).order_by("-forum_count")[:5]
-        context["private_groups"] = ChatRoom.objects.filter(is_public=False)[:5]
         context["query"] = self.request.GET.get("q", "")
         context["sort_order"] = self.request.GET.get("sort", "-created_at")
+        context["top_experts"] = Expert.objects.filter(status="Approved").order_by("rank")[:5]
         return context

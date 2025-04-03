@@ -4,9 +4,9 @@
 {% block content %}
     <div class="container-fluid mt-4">
         <div class="row">
-            <!-- Left Sidebar -->
-            <aside class="col-lg-3">
-                <section class="card shadow-sm p-3 pb-1">
+            <!-- Left Sidebar: Top Export & Popular Tags -->
+            <aside class="col-lg-3 col-md-4 d-none d-md-block sticky-sidebar">
+                <section class="card shadow-sm p-3 pb-1 mb-3">
                     <h5 class="fw-bold text-primary mb-2.5">Top Experts</h5>
                     <ul class="list-group list-unstyled ps-2">
                         {% for expert in top_experts %}
@@ -52,11 +52,39 @@
                         {% endfor %}
                     </ul>
                 </section>
+
+                <section class="card shadow-sm p-3 pb-1 mb-4">
+                    <h5 class="fw-bold text-primary mb-2.5">Popular Tags</h5>
+                    <ul class="list-group list-unstyled ps-2">
+                        {% for tag in tags %}
+                            <li class="d-flex align-items-center py-2">
+                                <a href="{% url 'marketmates:forum_list' %}?q=%23{{ tag.tag_name }}"
+                                   class="text-decoration-none text-dark fw-bold">
+                                    <span class="badge me-2" style="background-color: #5D5FEF;">#{{ tag.tag_name }}</span>
+                                </a>
+                                <div class="ms-auto text-muted small text-end" style="width: 100px;">
+                                    <i class="bi bi-file-text-fill text-secondary me-1"></i>
+                                    {% with tag.forum_count as count %}
+                                        {% if count > 99 %}
+                                            99+
+                                        {% else %}
+                                            {{ count }}
+                                        {% endif %}
+                                    {% endwith %}
+                                    Forums
+                                </div>
+                            </li>
+
+                        {% empty %}
+                            <p class="text-muted">No tags available.</p>
+                        {% endfor %}
+                    </ul>
+                </section>
             </aside>
 
             <!-- Main Content: Expert List -->
             <main class="col-lg-9">
-                <h2 class="mb-4">Experts</h2>
+                <h2 class="mb-1">Experts</h2>
 
                 {% if experts %}
                     {% for expert in experts %}
@@ -100,7 +128,7 @@
                         </a>
                     {% endfor %}
                 {% else %}
-                    <p class="text-muted text-center">No experts found.</p>
+                    <p class="text-muted text-center">No experts available.</p>
                 {% endif %}
             </main>
         </div>
