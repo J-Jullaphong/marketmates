@@ -1,3 +1,5 @@
+import logging
+
 from django.shortcuts import render, redirect
 from django.views import View
 from django.contrib import messages
@@ -6,6 +8,8 @@ from django.utils.decorators import method_decorator
 
 from ..models import User
 from ..forms import ProfileForm
+
+db_logger = logging.getLogger('db')
 
 
 @method_decorator(login_required, name="dispatch")
@@ -41,9 +45,11 @@ class ProfileView(View):
         if form.is_valid():
             form.save()
             messages.success(request, "Profile updated successfully.")
+            db_logger.info(f"Profile updated successfully for user: {user.username} ({user.email})")
             return redirect("marketmates:profile")
 
         messages.error(request, "There was an error updating your profile. Please check the form and try again.")
+        db_logger.warning(f"Profile update failed for user: {user.username}. Errors: {form.errors.as_json()}")
         context = {
             'form': form,
             'user': user,

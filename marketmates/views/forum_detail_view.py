@@ -1,3 +1,5 @@
+import logging
+
 from django.views.generic import DetailView
 from django.shortcuts import redirect
 from django.db.models import Count
@@ -7,6 +9,8 @@ from notifications.signals import notify
 
 from ..models import Forum, Comment, Tag, Expert
 from ..forms import CommentForm
+
+db_logger = logging.getLogger('db')
 
 
 class ForumDetailView(DetailView):
@@ -34,7 +38,7 @@ class ForumDetailView(DetailView):
             comment.forum = self.object
             comment.user = request.user
             comment.save()
-
+            db_logger.info(f"New comment added by {request.user.username} on forum '{self.object.title}'.")
             forum_owner = self.object.created_by
 
             if forum_owner != request.user:
@@ -50,6 +54,11 @@ class ForumDetailView(DetailView):
                     level='info'
                 )
 
+                db_logger.info(f"Notification sent to {forum_owner.username} from {request.user.username} "
+                               f"on forum '{self.object.title}'.")
+
             return redirect("marketmates:forum_detail", pk=self.object.pk)
 
+        db_logger.warning(f"Comment creation failed for user for user {request.user.username} on forum "
+                          f"'{self.object.title}'. Errors: {form.errors.as_json()}")
         return self.get(request, *args, **kwargs)

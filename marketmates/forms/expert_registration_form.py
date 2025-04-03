@@ -64,7 +64,7 @@ class ExpertRegistrationForm(UserCreationForm):
         user = super().save(commit=False)
         if commit:
             user.is_active = False
-            user.username = f"{self.cleaned_data['first_name']} {self.cleaned_data['last_name']}"
+            user.username = f"{self.cleaned_data['first_name']}_{self.cleaned_data['last_name']}"
             user.save()
 
             Expert.objects.create(user=user,

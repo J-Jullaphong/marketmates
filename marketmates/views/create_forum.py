@@ -1,3 +1,5 @@
+import logging
+
 from django.views.generic import CreateView
 from django.shortcuts import redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -5,6 +7,8 @@ from django.db.models import Count
 
 from ..models import Forum, Tag, ChatRoom
 from ..forms import ForumForm
+
+db_logger = logging.getLogger('db')
 
 
 class CreateForumView(LoginRequiredMixin, CreateView):
@@ -34,8 +38,10 @@ class CreateForumView(LoginRequiredMixin, CreateView):
         for tag_name in tag_names:
             tag, _ = Tag.objects.get_or_create(tag_name=tag_name)
             self.object.tags.add(tag)
+        db_logger.info(f"Forum created by {self.request.user.username}: '{self.object.title}'")
         return redirect("marketmates:home")
 
     def form_invalid(self, form):
         """Renders the form with validation errors if form is invalid."""
+        db_logger.warning(f"Forum creation failed for user {self.request.user.username}. Errors: {form.errors.as_json()}")
         return self.render_to_response(self.get_context_data(form=form))

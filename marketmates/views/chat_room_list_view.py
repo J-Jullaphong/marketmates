@@ -1,4 +1,6 @@
 import json
+import logging
+
 from datetime import datetime, timedelta
 from operator import attrgetter
 
@@ -15,6 +17,7 @@ from ..forms import ChatRoomForm
 from ..models import ChatRoom, Message
 
 User = get_user_model()
+db_logger = logging.getLogger('db')
 
 
 class ChatRoomListView(LoginRequiredMixin, ListView):
@@ -56,5 +59,9 @@ class ChatRoomListView(LoginRequiredMixin, ListView):
             for member in members:
                 chatroom.members.add(member)
             chatroom.members.add(self.request.user)
+            db_logger.info(f"Chat room '{chatroom.name}' created by {request.user.username} with members: "
+                           f"{[member.username for member in members]}")
             return redirect('marketmates:chat_room_list')
+
+        db_logger.warning(f"Invalid chat room creation attempt by user {request.user.username}")
         return redirect('marketmates:chat_room_list')
