@@ -84,7 +84,13 @@ Ensure you have the following installed:
 
 3. Set your production environment variables inside `.env.prod`.
 
-4. Generate self-signed SSL certificates (or replace with real ones):
+4. Create a Docker network (only once):
+
+    ```bash
+    docker network create marketmates
+    ```
+
+5. Generate self-signed SSL certificates (or replace with real ones):
 
     ```bash
     mkdir -p certs
@@ -93,7 +99,7 @@ Ensure you have the following installed:
       -out certs/nginx-selfsigned.crt
     ```
 
-5. Create the Grafana secrets for admin login:
+6. Create the Grafana secrets for admin login:
 
     ```bash
     mkdir -p secrets
@@ -101,24 +107,24 @@ Ensure you have the following installed:
     echo "your_strong_password_here" > secrets/grafana_admin_password
     ```
 
-6. Start the monitoring stack:
+7. Start the monitoring stack:
 
     ```bash
     docker compose -f docker-compose-monitoring.yaml up --build -d
     ```
 
-7. Start the production app:
+8. Start the production app:
 
     ```bash
     docker compose -f docker-compose-prod.yaml up --build -d
     ```
 
-8. To stop everything:
+9. To stop everything:
 
     ```bash
     docker compose -f docker-compose-prod.yaml down --volumes
-    docker compose -f docker-compose-monitoring.yaml down --volumes
-    ```
+    docker
+
 
 #### Accessing the App (Production)
 
