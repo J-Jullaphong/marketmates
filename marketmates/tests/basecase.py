@@ -115,7 +115,6 @@ class BaseCase(TestCase):
 
         self.expert1 = Expert.objects.create(
             designation="desi-1",
-            rank=1,
             user=self.expert_user1,
             status="Approved",
         )
@@ -132,7 +131,6 @@ class BaseCase(TestCase):
 
         self.expert2 = Expert.objects.create(
             designation="desi-2",
-            rank=2,
             user=self.expert_user2,
             status="Approved",
         )
@@ -172,22 +170,25 @@ class BaseCase(TestCase):
             created_at=now - timedelta(days=1)
         )
 
+        # Favorite expert_forum-1
+        self.favorite_expert = FavoriteForum.objects.create(
+            user=self.expert_user2,
+            forum=self.expert_forum1
+        )
+
         # ChatRooms
         self.chatroom1 = ChatRoom.objects.create(
             name="chatroom-1",
-            capacity=15
         )
         self.chatroom1.members.set([self.user1, self.user2])
 
         self.chatroom2 = ChatRoom.objects.create(
             name="chatroom-2",
-            capacity=10
         )
         self.chatroom2.members.set([self.user1, self.expert_user1])
 
         self.chatroom3 = ChatRoom.objects.create(
             name="chatroom-3",
-            capacity=5
         )
         self.chatroom3.members.set([self.user2, self.expert_user2])
 

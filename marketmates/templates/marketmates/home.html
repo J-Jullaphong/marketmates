@@ -284,7 +284,7 @@
                                 <div class="d-flex justify-content-between align-items-center mt-2">
                                     <div class="d-flex flex-wrap">
                                         {% for tag in forum.tags.all|slice:":3" %}
-                                            <a href="?q=%23{{ tag.tag_name }}"
+                                            <a href="{% url 'marketmates:forum_list' %}?q=%23{{ tag.tag_name }}"
                                                class="badge text-white me-1 text-decoration-none mt-2"
                                                style="background-color: #5D5FEF;">
                                                 #{{ tag.tag_name }}

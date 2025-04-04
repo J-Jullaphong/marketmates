@@ -17,8 +17,6 @@ class Message(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     chat_room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE)
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
-    receiver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='received_messages')
     text = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to=message_image_upload_path, max_length=1024, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    was_read = models.BooleanField(default=False)
