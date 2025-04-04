@@ -1,5 +1,6 @@
 {% extends "marketmates/base.html" %}
 {% load static %}
+{% load humanize %}
 
 {% block content %}
     <style>
@@ -52,14 +53,14 @@
     </style>
 
     <div class="container mt-4">
-        <h1 class="text-center mb-3 text-primary">Market Update</h1>
+        <h1 class="text-center mb-3">Market Update</h1>
         <hr>
 
         <!-- SET Data -->
         <div class="row mb-4">
             <div class="col-12 text-center">
                 <div class="d-flex flex-column align-items-center">
-                    <h2 class="text-dark">SET - {{ latest_close|floatformat:2 }} THB</h2>
+                    <h2 class="text-dark">SET Index - {{ latest_close|floatformat:2|intcomma }} THB</h2>
                     <span class="badge
             {% if percent_change > 0 %} bg-success
             {% elif percent_change < 0 %} bg-danger

@@ -60,6 +60,14 @@ def parse_table_data(data):
     return cleaned_data[:4]
 
 
+def format_numeric_columns(df):
+    """Format all numeric columns in the DataFrame with commas and 2 decimals."""
+    df_copy = df.copy()
+    for col in df_copy.select_dtypes(include='number').columns:
+        df_copy[col] = df_copy[col].apply(lambda x: f"{x:,.2f}" if pd.notnull(x) else x)
+    return df_copy
+
+
 @shared_task
 def fetch_and_store_market_data():
     """Scrape and store market data."""
@@ -75,6 +83,11 @@ def fetch_and_store_market_data():
 
     most_active_value, most_active_volume, top_gainer, top_loser = parse_table_data(
         data)
+
+    most_active_value = format_numeric_columns(most_active_value)
+    most_active_volume = format_numeric_columns(most_active_volume)
+    top_gainer = format_numeric_columns(top_gainer)
+    top_loser = format_numeric_columns(top_loser)
 
     set_data, latest_close, percent_change = fetch_stock_data()
 

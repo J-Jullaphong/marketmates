@@ -1,5 +1,6 @@
 {% extends "marketmates/base.html" %}
 {% load static %}
+{% load humanize %}
 
 {% block header %}
     {{ form.media }}
@@ -101,7 +102,7 @@
                         </div>
                         <div class="d-flex flex-column flex-md-row align-items-center align-items-md-start justify-content-between p-4 rounded-3 shadow-sm text-center text-md-start">
                             <div class="d-flex flex-column">
-                                <p class="mb-0 fw-bold text-dark fs-4">SET Index {{ latest_close|floatformat:2 }}</p>
+                                <p class="mb-0 fw-bold text-dark fs-4">SET Index - {{ latest_close|floatformat:2|intcomma }}</p>
                                 <p class="mb-0 text-muted small">Last Update | {{ last_update }}</p>
                             </div>
                             <div class="mt-2 mt-md-0 text-md-end">
