@@ -1,14 +1,15 @@
 # MarketMates
 
-MarketMates is an investment community web application that connects investors through forums, live chat, and private groups. It features expert opinions, actionable market analysis, and daily updates on market conditions. Designed to promote knowledge sharing and market learning, MarketMates fosters a dynamic and engaging environment for investors.
+MarketMates is an investment community web application that connects investors
+through forums, live chat, and private groups. It features expert opinions, 
+and daily updates on market conditions. Designed to promote knowledge sharing and market learning,
 
 ## Features
 
-- **Community Forums** – Engage in discussions with fellow investors.
+- **Community Forums** – Engage in discussions with other investors.
 - **Live Chat** – Real-time communication for instant knowledge sharing.
 - **Private Groups** – Create or join exclusive groups for focused discussions.
-- **Expert Opinions** – Insights from market experts to guide investment decisions.
-- **Market Analysis** – Actionable analysis to help users stay ahead.
+- **Verified Expert Content** – Insights from market experts to guide investment decisions.
 - **Daily Market Updates** – Stay informed with real-time data.
 
 ---
@@ -25,6 +26,8 @@ Ensure you have the following installed:
 ---
 
 ### Development Setup
+
+> **Note:** For this submission, `.env.dev` is already provided — **You can skip step 2 and 3**.
 
 1. Clone the repository and navigate to the directory:
 
@@ -44,25 +47,27 @@ Ensure you have the following installed:
 4. Start the development app:
 
     ```bash
-    docker-compose -f docker-compose-dev.yaml up --build
+    docker compose -f docker-compose-dev.yaml up --build -d
     ```
 
 5. To stop the app:
 
     ```bash
-    docker-compose -f docker-compose-dev.yaml down --volumes
+    docker compose -f docker-compose-dev.yaml down --volumes
     ```
-   
+
 #### Accessing the App (Development)
 
-- **MarketMates App**:  
-  - URL: [http://localhost:8000/](http://localhost:8000/)
+- **MarketMates App**:
+    - URL: [http://localhost:8000/](http://localhost:8000/)
 
 > Monitoring services like Grafana and Prometheus are **not required in development** for faster setup.
 
 ---
 
 ### Production Setup
+
+> **Note:** For this submission, `.env.prod` is already provided — **You can skip step 2 and 3**.
 
 1. Clone the repository and navigate to the directory:
 
@@ -99,27 +104,49 @@ Ensure you have the following installed:
 6. Start the monitoring stack:
 
     ```bash
-    docker-compose -f docker-compose-monitoring.yaml up --build -d
+    docker compose -f docker-compose-monitoring.yaml up --build -d
     ```
-   
+
 7. Start the production app:
 
     ```bash
-    docker-compose -f docker-compose-prod.yaml up --build -d
+    docker compose -f docker-compose-prod.yaml up --build -d
     ```
 
 8. To stop everything:
 
     ```bash
-    docker-compose -f docker-compose-prod.yaml down --volumes
-    docker-compose -f docker-compose-monitoring.yaml down --volumes
+    docker compose -f docker-compose-prod.yaml down --volumes
+    docker compose -f docker-compose-monitoring.yaml down --volumes
     ```
 
 #### Accessing the App (Production)
 
-- **MarketMates App**:  
-  - URL: [https://localhost/](https://localhost/)
+- **MarketMates App**:
+    - URL: [https://localhost/](https://localhost/)
 
-- **Grafana Dashboard**:  
-  - URL: [https://localhost/grafana/](https://localhost/grafana/)  
-  - Login using the credentials from `secrets/grafana_admin_user` and `secrets/grafana_admin_password`
+- **Grafana Dashboard**:
+    - URL: [https://localhost/grafana/](https://localhost/grafana/)
+    - Login using the credentials from `secrets/grafana_admin_user`
+      and `secrets/grafana_admin_password`
+
+---
+
+## Demo Users
+
+Use these demo accounts to log in for testing.
+
+- **Admin Access** (for Django Admin Panel):  
+  - URL: [http://localhost:8000/admin/](http://localhost:8000/admin/) or [https://localhost/admin/](https://localhost/admin/)
+  - Login using the **Username** and Password.
+
+- **Normal Users & Experts** (for main app login):  
+  - URL: [http://localhost:8000/login/](http://localhost:8000/login/) or [https://localhost/login/](https://localhost/login/)
+  - Log in using the **Email** and Password on the main login form.
+
+|       Username       |       Email        |        Password        | 
+|:--------------------:|:------------------:|:----------------------:|
+|      **admin**       |         -          | marketmates-admin1234  |
+|      **demo01**      |  demo01@gmail.com  |     marketmates01      |
+|      **demo02**      |  demo02@gmail.com  |     marketmates02      |
+| **Expert_NumberOne** | expert01@gmail.com | marketmates-expert1234 |
