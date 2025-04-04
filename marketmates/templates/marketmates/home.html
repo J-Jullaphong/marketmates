@@ -37,7 +37,8 @@
                                     {% endif %}
                                 </div>
                                 <a href="{% url 'marketmates:expert_detail' expert.pk %}"
-                                   class="text-decoration-none text-dark fw-bold">
+                                    class="text-decoration-none text-dark fw-bold text-truncate d-block"
+                                    style="max-width: 200px;">
                                     {{ expert.user.username }}
                                 </a>
                                 <div class="ms-auto text-muted small text-end" style="width: 100px;">
