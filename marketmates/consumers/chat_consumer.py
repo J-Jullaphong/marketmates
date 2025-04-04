@@ -5,6 +5,7 @@ import uuid
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
+from django.core.cache import cache
 from django.core.files.base import ContentFile
 from notifications.signals import notify
 
@@ -34,6 +35,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.user_group_name,
                                            self.channel_name)
 
+        await self.mark_user_active_in_room(self.room_id, self.user.username)
+
         await self.accept()
 
         messages = await self.get_previous_messages()
@@ -60,6 +63,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                                                self.channel_name)
         await self.channel_layer.group_discard(self.user_group_name,
                                                self.channel_name)
+        await self.mark_user_inactive_in_room(self.room_id, self.user.username)
 
     async def receive(self, text_data):
         """Handles receiving a message (text or image) from WebSocket."""
@@ -106,6 +110,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     }
                 )
 
+                is_active = await self.is_user_active_in_room(self.room_id,
+                                                              member.username)
+                if not is_active:
+                    preview = message_text[
+                              :100] + "..." if message_text else "Image message"
+                    await self.send_notification(member, preview)
+
     async def chat_message(self, event):
         """Sends a message (text or image) to WebSocket."""
         message_data = {
@@ -130,6 +141,26 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'timestamp': event['timestamp'],
             'image_url': event.get('image_url')
         }))
+
+    @sync_to_async
+    def mark_user_active_in_room(self, room_id, username):
+        key = f"room_{room_id}_active_users"
+        users = set(cache.get(key, []))
+        users.add(username)
+        cache.set(key, list(users), timeout=3600)
+
+    @sync_to_async
+    def mark_user_inactive_in_room(self, room_id, username):
+        key = f"room_{room_id}_active_users"
+        users = set(cache.get(key, []))
+        users.discard(username)
+        cache.set(key, list(users), timeout=3600)
+
+    @sync_to_async
+    def is_user_active_in_room(self, room_id, username):
+        key = f"room_{room_id}_active_users"
+        users = cache.get(key, [])
+        return username in users
 
     @sync_to_async
     def get_chat_room(self):
@@ -163,24 +194,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
                                        save=True)
 
             new_message.save()
-
-            other_members = self.chat_room.members.exclude(id=self.user.id)
-            if other_members.exists():
-                preview = message_text[
-                          :100] + "..." if message_text else "Image message"
-                notify.send(
-                    sender=self.user,
-                    recipient=other_members,
-                    verb='sent you a message',
-                    description=preview,
-                    level='chat',
-                    target=self.chat_room
-                )
-
             return new_message
+
         except Exception as e:
-            print(e)
+            print(f"[Save Message Error]: {e}")
             return None
+
+    @sync_to_async
+    def send_notification(self, recipient, preview):
+        """
+        Sends a notification to the recipient.
+        """
+        notify.send(
+            sender=self.user,
+            recipient=recipient,
+            verb='sent you a message',
+            description=preview,
+            level='chat',
+            target=self.chat_room
+        )
 
     @sync_to_async
     def get_username(self, user_id):

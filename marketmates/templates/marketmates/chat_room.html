@@ -273,7 +273,38 @@
                                     <ul class="list-group" id="selectedMembersList"></ul>
                                 </div>
                             </div>
-                            <button id="submitMembers" class="btn btn-primary">Add Selected Members</button>
+                            <button id="submitMembers" class="btn btn-primary" style="display: none;">Add Selected Members</button>
+                        <hr class="my-3">
+                        {% if members|length > 1 %}
+                            <form id="leaveGroupForm" method="POST" action="{% url 'marketmates:leave_group' room_id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger w-100">Leave Group</button>
+                            </form>
+                        {% else %}
+                            <p class="text-muted mt-3">You are the only member. Deleting this group will remove it permanently.</p>
+                            <form id="leaveGroupForm" method="POST" action="{% url 'marketmates:leave_group' room_id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger w-100">Leave and Delete Group</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="confirmRemoveModal" tabindex="-1" aria-labelledby="confirmRemoveModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmRemoveModalLabel">Confirm Removal</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to remove this member from the group?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                        <button type="button" class="btn btn-danger" id="confirmRemoveBtn">Yes, Remove</button>
                     </div>
                 </div>
             </div>
@@ -305,6 +336,7 @@
     <script>
         const roomId = "{{ room_id }}";
         const currentUser = "{{ current_user_username }}";
+        const renderedMessages = new Set();
 
         const chatSocket = new WebSocket(
             (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + "/ws/chat/" + roomId + "/"
@@ -318,7 +350,6 @@
 
         chatSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
-
             if (data.previous_messages) {
                 chatMessagesContainer.innerHTML = "";
                 data.previous_messages.reverse().forEach((msg) => {
@@ -329,323 +360,287 @@
             }
         };
 
-        chatSocket.onclose = function(e) {
-            console.error("Chat socket closed unexpectedly. Reconnecting...");
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
+        chatSocket.onclose = function() {
+            console.error("Chat socket closed. Reconnecting...");
+            setTimeout(() => window.location.reload(), 1000);
         };
 
-        document.getElementById("send-message").onclick = function() {
-            sendMessage();
-        };
-
-        document.getElementById("chat-message-input").addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                sendMessage();
-            }
+        document.getElementById("send-message").onclick = sendMessage;
+        document.getElementById("chat-message-input").addEventListener("keypress", e => {
+            if (e.key === "Enter") sendMessage();
         });
 
         document.getElementById("imageInput").addEventListener("change", function(event) {
-            const imagePreviewContainer = document.getElementById("imagePreviewContainer");
-            const imagePreview = document.getElementById("imagePreview");
-            const imageUploadButton = document.getElementById("imageUploadButton");
             const file = event.target.files[0];
+            const imagePreview = document.getElementById("imagePreview");
+            const imagePreviewContainer = document.getElementById("imagePreviewContainer");
+            const uploadBtn = document.getElementById("imageUploadButton");
 
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = e => {
                     imagePreview.src = e.target.result;
                     imagePreviewContainer.style.display = "flex";
-
-                    imageUploadButton.classList.remove("btn-primary");
-                    imageUploadButton.classList.add("btn-danger");
-                    imageUploadButton.innerHTML = '<i class="bi bi-x"></i>';
+                    uploadBtn.classList.replace("btn-primary", "btn-danger");
+                    uploadBtn.innerHTML = '<i class="bi bi-x"></i>';
                 };
                 reader.readAsDataURL(file);
             }
         });
 
-        document.getElementById("imageUploadButton").addEventListener("click", function() {
-            const imageInput = document.getElementById("imageInput");
-            const imagePreviewContainer = document.getElementById("imagePreviewContainer");
-            const imageUploadButton = document.getElementById("imageUploadButton");
+        document.getElementById("imageUploadButton").addEventListener("click", () => {
+            const input = document.getElementById("imageInput");
+            const preview = document.getElementById("imagePreviewContainer");
+            const uploadBtn = document.getElementById("imageUploadButton");
 
-            if (imagePreviewContainer.style.display === "flex") {
-                imageInput.value = "";
-                imagePreviewContainer.style.display = "none";
-                imageUploadButton.classList.remove("btn-danger");
-                imageUploadButton.classList.add("btn-primary");
-                imageUploadButton.innerHTML = '<i class="bi bi-image"></i>';
+            if (preview.style.display === "flex") {
+                input.value = "";
+                preview.style.display = "none";
+                uploadBtn.classList.replace("btn-danger", "btn-primary");
+                uploadBtn.innerHTML = '<i class="bi bi-image"></i>';
             }
         });
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const searchInput = document.getElementById('searchMembers');
-            const suggestionsList = document.getElementById('memberSuggestions');
-            const selectedMembersList = document.getElementById('selectedMembersList');
-            const selectedMembersInput = document.getElementById('selectedMembersInput');
-            const selectedMembersLabel = document.getElementById('selectedMembersLabel');
-            const submitMembersButton = document.getElementById('submitMembers');
+        let selectedMemberIds = [];
+        const allUsers = JSON.parse('{{ users_json|escapejs }}');
+        const suggestionsList = document.getElementById("memberSuggestions");
+        const selectedMembersInput = document.getElementById("selectedMembersInput");
 
-            const allUsers = JSON.parse('{{ users_json|escapejs }}');
-            let selectedMemberIds = [];
+        function updateSelectedMembersInput() {
+            selectedMembersInput.value = selectedMemberIds.join(',');
+            document.getElementById("selectedMembersLabel").style.display = selectedMemberIds.length ? 'block' : 'none';
+            document.getElementById("submitMembers").style.display = selectedMemberIds.length ? 'block' : 'none';
+        }
 
-            selectedMembersLabel.style.display = 'none';
-            submitMembersButton.style.display = 'none';
-
-            function updateSelectedMembersInput() {
-                selectedMembersInput.value = selectedMemberIds.join(',');
-                toggleSelectedMembersVisibility();
+        document.getElementById("searchMembers").addEventListener("input", function () {
+            const query = this.value.toLowerCase();
+            suggestionsList.innerHTML = "";
+            const results = allUsers.filter(u => u.username.toLowerCase().includes(query));
+            if (results.length === 0) {
+                suggestionsList.style.display = "none";
+                return;
             }
-
-            function toggleSelectedMembersVisibility() {
-                if (selectedMemberIds.length > 0) {
-                    selectedMembersLabel.style.display = 'block';
-                    submitMembersButton.style.display = 'block';
-                } else {
-                    selectedMembersLabel.style.display = 'none';
-                    submitMembersButton.style.display = 'none';
-                }
-            }
-
-            function displaySuggestions(query) {
-                suggestionsList.innerHTML = '';
-                const filteredUsers = allUsers.filter(user =>
-                    user.username.toLowerCase().includes(query.toLowerCase())
-                );
-
-                filteredUsers.forEach(user => {
-                    if (selectedMemberIds.includes(user.id)) return;
-
-                    const listItem = document.createElement('li');
-                    listItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
-                    listItem.textContent = user.username;
-
-                    const tickIcon = document.createElement('i');
-                    tickIcon.classList.add('bi', 'bi-check', 'text-success');
-                    listItem.appendChild(tickIcon);
-
-                    listItem.addEventListener('click', function () {
-                        addMemberToSelected(user);
-                        searchInput.value = '';
-                        suggestionsList.style.display = 'none';
-                    });
-
-                    suggestionsList.appendChild(listItem);
-                });
-
-                suggestionsList.style.display = filteredUsers.length > 0 ? 'block' : 'none';
-            }
-
-            function addMemberToSelected(user) {
+            results.forEach(user => {
                 if (selectedMemberIds.includes(user.id)) return;
-
-                selectedMemberIds.push(user.id);
-                updateSelectedMembersInput();
-
-                const listItem = document.createElement('li');
-                listItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
-                listItem.textContent = user.username;
-
-                const removeButton = document.createElement('button');
-                removeButton.classList.add('btn', 'btn-sm', 'btn-danger');
-                removeButton.textContent = 'X';
-                removeButton.addEventListener('click', function () {
-                    selectedMemberIds = selectedMemberIds.filter(id => id !== user.id);
+                const item = document.createElement("li");
+                item.className = "list-group-item d-flex justify-content-between align-items-center";
+                item.textContent = user.username;
+                item.innerHTML += '<i class="bi bi-check text-success"></i>';
+                item.addEventListener("click", () => {
+                    selectedMemberIds.push(user.id);
                     updateSelectedMembersInput();
-                    selectedMembersList.removeChild(listItem);
+                    document.getElementById("selectedMembersList").innerHTML += `
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            ${user.username}
+                            <button class="btn btn-sm btn-danger remove-selected" data-id="${user.id}">X</button>
+                        </li>
+                    `;
+                    this.value = "";
+                    suggestionsList.style.display = "none";
                 });
-
-                listItem.appendChild(removeButton);
-                selectedMembersList.appendChild(listItem);
-            }
-
-            searchInput.addEventListener('input', function () {
-                const query = searchInput.value;
-                displaySuggestions(query);
+                suggestionsList.appendChild(item);
             });
+            suggestionsList.style.display = "block";
+        });
 
-            submitMembersButton.addEventListener('click', function () {
-                if (selectedMemberIds.length === 0) {
-                    alert("No members selected.");
-                    return;
-                }
+        function toggleSelectedMembersVisibility() {
+            const selectedWrapper = document.getElementById("selectedMembers");
+            const submitButton = document.getElementById("submitMembers");
 
-                fetch(`/chat/add_members/${roomId}/`, {
+            if (selectedMemberIds.length > 0) {
+                selectedWrapper.style.display = "block";
+                submitButton.style.display = "block";
+            } else {
+                selectedWrapper.style.display = "none";
+                submitButton.style.display = "none";
+            }
+        }
+
+        document.getElementById("submitMembers").addEventListener("click", function () {
+            fetch(`/chat/add_members/${roomId}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ members: selectedMemberIds })
+            }).then(res => res.json()).then(data => {
+                if (data.success) location.reload();
+                else alert("Failed to add members.");
+            });
+        });
+
+        document.getElementById("selectedMembersList").addEventListener("click", function (e) {
+            if (e.target.classList.contains("remove-selected")) {
+                const id = parseInt(e.target.dataset.id);
+                selectedMemberIds = selectedMemberIds.filter(mid => mid !== id);
+                e.target.closest("li").remove();
+                updateSelectedMembersInput();
+            }
+        });
+
+        // Confirm remove logic
+        let memberToRemoveId = null;
+        const removeModal = new bootstrap.Modal(document.getElementById("confirmRemoveModal"));
+
+        document.querySelectorAll(".remove-member").forEach(button => {
+            button.addEventListener("click", () => {
+                memberToRemoveId = button.dataset.userId;
+                removeModal.show();
+            });
+        });
+
+        document.getElementById("confirmRemoveBtn").addEventListener("click", () => {
+            if (memberToRemoveId) {
+                fetch(`/chat/remove_member/${roomId}/${memberToRemoveId}/`, {
                     method: "POST",
                     headers: {
                         "X-CSRFToken": "{{ csrf_token }}",
                         "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ members: selectedMemberIds })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert("Failed to add members.");
                     }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) location.reload();
+                    else alert("Failed to remove member.");
                 });
-            });
+            }
+        });
 
-            document.querySelectorAll(".remove-member").forEach(button => {
-                button.addEventListener("click", function() {
-                    const userId = this.dataset.userId;
-                    fetch(`/chat/remove_member/${roomId}/${userId}/`, {
-                        method: "POST",
-                        headers: {
-                            "X-CSRFToken": "{{ csrf_token }}",
-                            "Content-Type": "application/json",
-                        },
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            location.reload();
-                        } else {
-                            alert("Failed to remove member.");
-                        }
-                    });
-                });
-            });
+        // Leave group confirmation
+        document.getElementById("leaveGroupForm").addEventListener("submit", function (e) {
+            if (!confirm("Are you sure you want to leave this chat group?")) {
+                e.preventDefault();
+            }
         });
 
         function sendMessage() {
             const messageInput = document.getElementById("chat-message-input");
             const imageInput = document.getElementById("imageInput");
-            const imageUploadButton = document.getElementById("imageUploadButton");
-            const message = messageInput.value.trim();
             const imageFile = imageInput.files[0];
 
-            if (message || imageFile) {
-                if (imageFile) {
-                    let reader = new FileReader();
-                    reader.onload = function(event) {
-                        let imageData = event.target.result;
+            if (!messageInput.value.trim() && !imageFile) return;
 
-                        chatSocket.send(JSON.stringify({
-                            "message": message,
-                            "image": imageData
-                        }));
-
-                        imageInput.value = "";
-                        imageUploadButton.classList.remove("btn-danger")
-                        imageUploadButton.classList.add("btn-primary")
-                        imageUploadButton.innerHTML = '<i class="bi bi-image"></i>';
-                        messageInput.value = "";
-                        document.getElementById("imagePreviewContainer").style.display = "none";
-                    };
-                    reader.readAsDataURL(imageFile);
-                } else {
-                    chatSocket.send(JSON.stringify({ "message": message, "image": null }));
+            if (imageFile) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    chatSocket.send(JSON.stringify({
+                        message: messageInput.value.trim(),
+                        image: e.target.result
+                    }));
                     messageInput.value = "";
-                }
+                    imageInput.value = "";
+                    document.getElementById("imagePreviewContainer").style.display = "none";
+                    document.getElementById("imageUploadButton").classList.replace("btn-danger", "btn-primary");
+                    document.getElementById("imageUploadButton").innerHTML = '<i class="bi bi-image"></i>';
+                };
+                reader.readAsDataURL(imageFile);
+            } else {
+                chatSocket.send(JSON.stringify({
+                    message: messageInput.value.trim(),
+                    image: null
+                }));
+                messageInput.value = "";
             }
         }
 
+        // Message rendering
         let lastMessageDate = null;
 
-        function appendMessage(sender, message, timestamp, imageUrl = null, profilePicture = null) {
-            const messageDate = new Date(timestamp).toLocaleDateString();
+        function appendMessage(sender, message, timestamp, imageUrl, profilePicture) {
+            const uniqueKey = `${sender}-${message}-${timestamp}`;
+            if (renderedMessages.has(uniqueKey)) return;
+            renderedMessages.add(uniqueKey);
 
-            if (lastMessageDate !== messageDate) {
-                lastMessageDate = messageDate;
-                insertDateSeparator(messageDate);
+            const msgDate = new Date(timestamp).toLocaleDateString();
+            if (lastMessageDate !== msgDate) {
+                insertDateSeparator(msgDate);
+                lastMessageDate = msgDate;
             }
 
-            const messageContainer = document.createElement("div");
-            messageContainer.classList.add("message-container");
+            const container = document.createElement("div");
+            const isSelf = sender === currentUser;
+            container.className = "message-container " + (isSelf ? "message-container-right" : "message-container-left");
 
-            const senderName = document.createElement("div");
-            senderName.classList.add("sender-name");
-            senderName.textContent = sender;
+            const wrapper = document.createElement("div");
+            wrapper.className = "message-wrapper";
 
-            const profileImg = document.createElement("img");
-            profileImg.classList.add("profile-picture");
-            profileImg.src = profilePicture || "{% static 'images/person-circle.svg' %}";
-            profileImg.alt = sender;
+            const messageDiv = document.createElement("div");
+            messageDiv.className = "message " + (isSelf ? "message-right" : "message-left");
+            if (message) messageDiv.innerHTML = message;
 
-            const messageElement = document.createElement("div");
-            messageElement.classList.add("message");
+            const timestampEl = document.createElement("small");
+            timestampEl.className = "timestamp";
+            timestampEl.textContent = new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
             const timestampContainer = document.createElement("div");
-            timestampContainer.classList.add("timestamp-container");
+            timestampContainer.className = "timestamp-container";
+            timestampContainer.appendChild(timestampEl);
 
-            const timestampElement = document.createElement("small");
-            timestampElement.classList.add("timestamp");
-            timestampElement.textContent = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            if (!isSelf) {
+                const leftWrapper = document.createElement("div");
+                leftWrapper.style.display = "flex";
+                leftWrapper.style.alignItems = "flex-start";
 
-            timestampContainer.appendChild(timestampElement)
+                const img = document.createElement("img");
+                img.className = "profile-picture";
+                img.src = profilePicture || "{% static 'images/person-circle.svg' %}";
+                img.alt = sender;
 
-            const messageWrapper = document.createElement("div");
-            messageWrapper.classList.add("message-wrapper");
+                const name = document.createElement("div");
+                name.className = "sender-name";
+                name.textContent = sender;
 
-            if (message) {
-                messageElement.innerHTML = message;
-                messageWrapper.appendChild(messageElement);
+                const info = document.createElement("div");
+                info.appendChild(name);
+                info.appendChild(wrapper);
+
+                leftWrapper.appendChild(img);
+                leftWrapper.appendChild(info);
+                container.appendChild(leftWrapper);
+                container.appendChild(timestampContainer);
+            } else {
+                container.appendChild(timestampContainer);
+                container.appendChild(wrapper);
             }
+
+            wrapper.appendChild(messageDiv);
 
             if (imageUrl) {
-                const imageElement = document.createElement("img");
-                imageElement.src = imageUrl;
-                imageElement.classList.add("chat-image");
-                imageElement.onclick = function () {
-                    openModal(imageUrl);
-                };
-                messageWrapper.appendChild(imageElement);
+                const img = document.createElement("img");
+                img.src = imageUrl;
+                img.className = "chat-image";
+                img.onclick = () => openModal(imageUrl);
+                wrapper.appendChild(img);
             }
 
-            if (sender === currentUser) {
-                messageContainer.classList.add("message-container-right");
-                messageElement.classList.add("message-right");
-                messageContainer.appendChild(timestampContainer);
-                messageContainer.appendChild(messageWrapper);
-            } else {
-                messageContainer.classList.add("message-container-left");
-                messageElement.classList.add("message-left");
-
-                const leftContainer = document.createElement("div");
-                leftContainer.style.display = "flex";
-                leftContainer.style.alignItems = "flex-start";
-
-                leftContainer.appendChild(profileImg);
-                const textContainer = document.createElement("div");
-                textContainer.appendChild(senderName);
-                textContainer.appendChild(messageWrapper);
-                leftContainer.appendChild(textContainer);
-
-                messageContainer.appendChild(leftContainer);
-                messageContainer.appendChild(timestampContainer);
-            }
-
-            chatMessagesContainer.appendChild(messageContainer);
+            chatMessagesContainer.appendChild(container);
             chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
         }
 
-        function insertDateSeparator(dateText) {
-            const separator = document.createElement("div");
-            separator.classList.add("date-separator");
-            separator.textContent = new Date(dateText).toLocaleDateString('en-US', {
-                month: 'long', day: 'numeric', year: 'numeric'
+        function insertDateSeparator(dateStr) {
+            const sep = document.createElement("div");
+            sep.className = "date-separator";
+            sep.textContent = new Date(dateStr).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
             });
-            chatMessagesContainer.appendChild(separator);
+            chatMessagesContainer.appendChild(sep);
         }
 
-        function openModal(imageUrl) {
-            document.getElementById("modalImage").src = imageUrl;
+        // Image preview modal
+        function openModal(url) {
+            document.getElementById("modalImage").src = url;
             document.getElementById("imageModal").style.display = "flex";
         }
 
-        document.querySelector(".close-modal").onclick = function () {
+        document.querySelector(".close-modal").onclick = () => {
             document.getElementById("imageModal").style.display = "none";
         };
 
-        document.getElementById("imageModal").onclick = function (event) {
-            if (event.target === this) {
-                this.style.display = "none";
-            }
+        document.getElementById("imageModal").onclick = function (e) {
+            if (e.target === this) this.style.display = "none";
         };
     </script>
 {% endblock %}

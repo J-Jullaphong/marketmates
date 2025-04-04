@@ -80,3 +80,21 @@ def remove_member(request, room_id, user_id):
         return JsonResponse({"success": True, "removed_user": user.username})
 
     return JsonResponse({"success": False, "error": "Permission denied"}, status=403)
+
+
+@csrf_exempt
+@login_required
+def leave_group(request, room_id):
+    """Allow a user to leave a chat room."""
+    room = get_object_or_404(ChatRoom, id=room_id)
+
+    if request.user in room.members.all():
+        room.members.remove(request.user)
+
+        if room.members.count() == 0:
+            room.delete()
+            messages.info(request, "You left the group. Room has been deleted as it had no members left.")
+        else:
+            messages.info(request, "You have left the group.")
+
+    return redirect('marketmates:chat_room_list')

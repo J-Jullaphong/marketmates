@@ -1,5 +1,5 @@
 from .chat_room_list_view import ChatRoomListView
-from .chat_room_view import ChatRoomView, add_members, remove_member
+from .chat_room_view import ChatRoomView, add_members, remove_member, leave_group
 from .ckeditor_file_uploader import ckeditor_file_uploader
 from .create_forum import CreateForumView
 from .forum_detail_view import ForumDetailView
