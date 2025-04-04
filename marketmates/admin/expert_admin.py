@@ -11,12 +11,12 @@ class ExpertAdmin(admin.ModelAdmin):
     """
 
     readonly_fields = ('user', 'designation', 'document', 'verified_at')
-    list_display = ('user', 'designation', 'status', 'verified_at', 'rank')
+    list_display = ('user', 'designation', 'status', 'verified_at')
     list_filter = ('status', 'verified_at')
     actions = ['approve_expert']
 
     fieldsets = (
-        ("Expert Information", {'fields': ('user', 'designation', 'rank')}),
+        ("Expert Information", {'fields': ('user', 'designation')}),
         ("Verification Details",
          {'fields': ('document', 'status', 'verified_at')}),
     )
@@ -34,7 +34,8 @@ class ExpertAdmin(admin.ModelAdmin):
     def change_view(self, request, object_id, form_url='', extra_context=None):
         """Customizes the edit view title."""
         extra_context = extra_context or {}
-        extra_context['title'] = f"Expert Verification: {object_id}"
+        expert = self.get_object(request, object_id)
+        extra_context['title'] = f"Expert Verification: {expert}"
         extra_context['subtitle'] = None
         return super().change_view(request, object_id, form_url,
                                    extra_context=extra_context)
@@ -52,14 +53,12 @@ class ExpertAdmin(admin.ModelAdmin):
 
     def approve_expert(self, request, queryset):
         """Approves selected experts by updating their status."""
+        updated = 0
         for expert in queryset:
             if expert.status == 'Pending':
                 expert.status = 'Approved'
-                expert.verified_at = timezone.now()
-                expert.user.is_active = True
-                expert.user.save()
                 expert.save()
-                self.message_user(request,
-                                  f"Expert {expert.user} approved successfully.")
+                updated += 1
+        self.message_user(request, f"{updated} expert(s) approved successfully.")
 
     approve_expert.short_description = "Approve selected experts"
