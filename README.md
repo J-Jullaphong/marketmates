@@ -123,8 +123,8 @@ Ensure you have the following installed:
 
     ```bash
     docker compose -f docker-compose-prod.yaml down --volumes
-    docker
-
+    docker compose -f docker-compose-monitoring.yaml down --volumes
+    ```
 
 #### Accessing the App (Production)
 
