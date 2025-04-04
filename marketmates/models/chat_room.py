@@ -15,3 +15,7 @@ class ChatRoom(models.Model):
     def get_absolute_url(self):
         """Returns the absolute URL for the chat room page."""
         return reverse('marketmates:chat_room_page', kwargs={'room_id': self.pk})
+
+    def __str__(self):
+        """Returns a string representation of the chat room."""
+        return self.name

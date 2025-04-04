@@ -28,3 +28,8 @@ class Comment(models.Model):
         for img in soup.find_all("img"):
             img.decompose()
         return str(soup)
+
+    def __str__(self):
+        """Returns a string representation of the comment."""
+        return f"{self.user.username}: {self.get_formatted_content()[:30]}"
+

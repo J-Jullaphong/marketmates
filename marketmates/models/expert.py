@@ -39,3 +39,7 @@ class Expert(models.Model):
                 self.user.is_active = True
                 self.user.save()
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        """Returns a string representation of the expert."""
+        return self.user.username

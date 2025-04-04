@@ -20,3 +20,7 @@ class Message(models.Model):
     text = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to=message_image_upload_path, max_length=1024, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        """Returns a string representation of the message."""
+        return f"{self.sender.username} sent a message"

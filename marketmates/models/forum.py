@@ -40,3 +40,8 @@ class Forum(models.Model):
     def get_absolute_url(self):
         """Returns the absolute URL for the forum detail page."""
         return reverse("marketmates:forum_detail", kwargs={"pk": self.pk})
+
+    def __str__(self):
+        """Returns a string representation of the forum."""
+        return self.title
+

@@ -12,3 +12,7 @@ class FavoriteForum(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     forum = models.ForeignKey(Forum, on_delete=models.CASCADE)
     added_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        """Returns a string representation of the favorite forum entry."""
+        return f"{self.user.username} favorited '{self.forum.title}'"
