@@ -97,7 +97,7 @@
             {% if user.is_authenticated %}
                 <!-- User Profile Dropdown -->
                 <div class="dropdown">
-                    <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown">
+                    <a class="nav-link dropdown-toggle text-white" role="button" data-bs-toggle="dropdown">
                         {% if user.profile_picture %}
                             <img src="{{ user.profile_picture.url }}" alt="Profile Picture"
                                  class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
@@ -141,26 +141,27 @@
                 <li><hr class="dropdown-divider"></li>
 
                 <li><a class="dropdown-item" href="{% url 'marketmates:home' %}"><i class="bi bi-house-door-fill"></i> Home</a></li>
-                <li><a class="dropdown-item" href="{% url 'marketmates:market_update' %}"><i class="bi bi-calendar-fill"></i> Updates</a></li>
-                <li><a class="dropdown-item" href="{% url 'marketmates:forum_list' %}"><i class="bi bi-people-fill"></i> Forums</a></li>
-                <li><a class="dropdown-item" href="#"><i class="bi bi-mortarboard-fill"></i> Learning</a></li>
+                <li><a class="dropdown-item" href="{% url 'marketmates:market_update' %}"><i class="bi bi-calendar-fill"></i> Market Updates</a></li>
+                <li><a class="dropdown-item" href="{% url 'marketmates:forum_list' %}"><i class="bi bi-people-fill"></i> Community Forums</a></li>
+                <li><a class="dropdown-item" href="{% url 'marketmates:expert_list' %}"><i class="bi bi-mortarboard-fill"></i> Expert Contents</a></li>
                 <li><hr class="dropdown-divider"></li>
 
-                <li>
-                  <a class="dropdown-item d-flex justify-content-between align-items-center" href="{% url 'marketmates:chat_room_list' %}">
-                    <span><i class="bi bi-chat-dots-fill me-2"></i> Chat</span>
-                    <span class="badge bg-danger text-white chat-notify-badge" style="display: none;"></span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item d-flex justify-content-between align-items-center" href="{% url 'marketmates:notification_list' %}">
-                    <span><i class="bi bi-bell-fill me-2"></i> Notifications</span>
-                    <span class="badge bg-danger text-white general-notify-badge" style="display: none;"></span>
-                  </a>
-                </li>
                 {% if user.is_authenticated %}
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center" href="{% url 'marketmates:chat_room_list' %}">
+                        <i class="bi bi-chat-dots-fill me-1"></i> Chat
+                        <span class="badge bg-danger text-white chat-notify-badge ms-auto" style="display: none;"></span>
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center" href="{% url 'marketmates:notification_list' %}">
+                        <i class="bi bi-bell-fill me-1"></i> Notifications
+                        <span class="badge bg-danger text-white general-notify-badge ms-auto" style="display: none;"></span>
+                      </a>
+                    </li>
+
                     <li><a class="dropdown-item" href="{% url 'marketmates:profile' %}"><i class="bi bi-person-circle"></i> Profile</a></li>
-                    <li><a class="dropdown-item" href="{% url 'marketmates:favorite_forum_list' %}"><i class="bi bi-gear-fill"></i>Favorite Forums</a></li>
+                    <li><a class="dropdown-item" href="{% url 'marketmates:favorite_forum_list' %}"><i class="bi bi-bookmark-heart-fill"></i> Favorite Forums</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <form method="POST" action="{% url 'marketmates:logout' %}?next=/">

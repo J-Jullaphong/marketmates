@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block content %}
-    <div class="container-fluid mt-4 px-0">
+    <div class="container-fluid mt-4">
         <div class="row g-3">
             <!-- Left Sidebar: Top Export & Popular Tags -->
             <aside class="col-lg-3 col-md-4 d-none d-md-block sticky-sidebar">
@@ -247,21 +247,19 @@
 
                             <!-- Forum Details -->
                             <div class="flex-grow-1">
-                                <h5 class="card-title fw-bold">
-                                    <a href="{% url 'marketmates:forum_detail' forum.id %}"
-                                       class="text-dark text-decoration-none">
-                                        {{ forum.title }}
-                                    </a>
-                                </h5>
-                                <div>
-                                    <button class="btn p-0 border-0 bg-transparent position-absolute top-0 end-0 m-3 trigger-fav-modal"
+                                <div class="position-relative">
+                                    <h5 class="card-title fw-bold pe-5">
+                                        <a href="{% url 'marketmates:forum_detail' forum.id %}"
+                                           class="text-dark text-decoration-none">
+                                            {{ forum.title }}
+                                        </a>
+                                    </h5>
+                                    <button class="btn p-0 border-0 bg-transparent position-absolute top-0 end-0 m-1 trigger-fav-modal"
                                             data-forum-id="{{ forum.id }}">
                                         {% if forum.id in favorite_forum_ids %}
                                             <i class="bi bi-heart-fill text-danger fs-5"></i>
-                                            <span class="text-danger ms-1">Favorited</span>
                                         {% else %}
                                             <i class="bi bi-heart text-secondary fs-5"></i>
-                                            <span class="text-secondary ms-1">Add to Favorites</span>
                                         {% endif %}
                                     </button>
                                 </div>
