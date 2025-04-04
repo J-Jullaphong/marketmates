@@ -11,7 +11,7 @@ class BaseCase(TestCase):
     Base test case for integration tests in the MarketMates app.
 
     Provides:
-    - 2 regular users (user1, user2) with active status
+    - 2 regular users (user1, user2)
     - 2 expert users (expert_user1, expert_user2), each linked to an approved Expert profile
     - 3 tags (tag-1, tag-2, tag-3) for categorizing forums
     - 4 regular forums (forum-1 to forum-4), created by user1, each tagged and created on different days
@@ -33,7 +33,6 @@ class BaseCase(TestCase):
             username='user1',
             email='user1@example.com',
             password='#password123',
-            status='Active'
         )
         self.client1 = Client()
         self.client1.login(username='user1', password='#password123')
@@ -42,7 +41,6 @@ class BaseCase(TestCase):
             username='user2',
             email='user2@example.com',
             password='#password123',
-            status='Active'
         )
         self.client2 = Client()
         self.client2.login(username='user2', password='#password123')
@@ -110,7 +108,6 @@ class BaseCase(TestCase):
             username='expert_user1',
             email='expert-user1@example.com',
             password='#password123',
-            status='Active'
         )
 
         self.expert1 = Expert.objects.create(
@@ -126,7 +123,6 @@ class BaseCase(TestCase):
             username='expert_user2',
             email='expert-user2@example.com',
             password='#password123',
-            status='Active'
         )
 
         self.expert2 = Expert.objects.create(
