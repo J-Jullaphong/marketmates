@@ -89,7 +89,7 @@
                     {% if query %}
                         <h2>Search Results for "{{ query }}"</h2>
                     {% else %}
-                        <h2>Forum List</h2>
+                        <h2>Community Forums</h2>
                     {% endif %}
 
                     <form method="GET" id="sortForm" class="d-flex align-items-center">
@@ -156,10 +156,8 @@
                                                 data-forum-id="{{ forum.id }}">
                                             {% if forum.id in favorite_forum_ids %}
                                                 <i class="bi bi-heart-fill text-danger fs-5"></i>
-                                                <span class="text-danger ms-1">Favorited</span>
                                             {% else %}
                                                 <i class="bi bi-heart text-secondary fs-5"></i>
-                                                <span class="text-secondary ms-1">Add to Favorites</span>
                                             {% endif %}
                                         </button>
                                     </div>

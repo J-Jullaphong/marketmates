@@ -8,7 +8,7 @@ from django.utils.text import Truncator
 from django.utils.html import strip_tags
 from notifications.signals import notify
 
-from ..models import Forum, Comment, Tag, Expert
+from ..models import Forum, Comment, Tag, Expert, FavoriteForum
 from ..forms import CommentForm
 
 db_logger = logging.getLogger('db')
@@ -38,6 +38,9 @@ class ForumDetailView(DetailView):
             )
             .order_by('-fav_count')[:5]
         )
+        if self.request.user.is_authenticated:
+            context["is_favorited"] = FavoriteForum.objects.filter(
+                user=self.request.user, forum=self.object).exists()
         return context
 
     def post(self, request, *args, **kwargs):

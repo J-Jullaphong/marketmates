@@ -21,9 +21,12 @@ class ForumListView(ListView):
         if query:
             if query.startswith("#"):
                 tag_name = query[1:].strip()
-                queryset = queryset.filter(tags__tag_name__icontains=tag_name).distinct()
+                queryset = queryset.filter(
+                    tags__tag_name__icontains=tag_name).distinct()
             else:
-                queryset = queryset.filter(Q(title__icontains=query) | Q(description__icontains=query)).distinct()
+                queryset = queryset.filter(Q(title__icontains=query) | Q(
+                    description__icontains=query) | Q(
+                    created_by__username__icontains=query)).distinct()
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -31,22 +34,26 @@ class ForumListView(ListView):
         context = super().get_context_data(**kwargs)
 
         if self.request.user.is_authenticated:
-            favorite_forum_ids = FavoriteForum.objects.filter(user=self.request.user).values_list("forum_id", flat=True)
+            favorite_forum_ids = FavoriteForum.objects.filter(
+                user=self.request.user).values_list("forum_id", flat=True)
             context["favorite_forum_ids"] = list(favorite_forum_ids)
         else:
             context["favorite_forum_ids"] = []
 
-        context["tags"] = Tag.objects.annotate(forum_count=Count("forum")).order_by("-forum_count")[:5]
+        context["tags"] = Tag.objects.annotate(
+            forum_count=Count("forum")).order_by("-forum_count")[:5]
         context["query"] = self.request.GET.get("q", "")
         context["sort_order"] = self.request.GET.get("sort", "-created_at")
         first_day_of_month = timezone.now().replace(day=1)
-        context["tags"] = Tag.objects.annotate(forum_count=Count("forum")).order_by("-forum_count")[:5]
+        context["tags"] = Tag.objects.annotate(
+            forum_count=Count("forum")).order_by("-forum_count")[:5]
         context["top_experts"] = (
             Expert.objects.filter(status="Approved")
             .annotate(
                 fav_count=Count(
                     'user__forum__favoriteforum',
-                    filter=Q(user__forum__favoriteforum__added_at__gte=first_day_of_month)
+                    filter=Q(
+                        user__forum__favoriteforum__added_at__gte=first_day_of_month)
                 )
             )
             .order_by('-fav_count')[:5]

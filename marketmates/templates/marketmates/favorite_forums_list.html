@@ -1,13 +1,14 @@
 {% extends "marketmates/base.html" %}
+{% load static %}
+
 {% block content %}
     <div class="container-fluid mt-4">
-        <h2 class="mb-4">My Favorite Forums</h2>
+        <h2 class="mb-4 text-center">My Favorite Forums</h2>
         {% if favorites %}
             {% for fav in favorites %}
                 {% with forum=fav.forum %}
                     <article class="card shadow-sm border-0 mb-3 position-relative">
                         <div class="card-body d-flex align-items-start">
-
                             {% with forum.get_first_image as image_url %}
                                 {% if image_url %}
                                     <img src="{{ image_url }}" class="rounded me-3 flex-shrink-0"
@@ -20,36 +21,57 @@
                                 {% endif %}
                             {% endwith %}
 
+                            <!-- Forum Details -->
                             <div class="flex-grow-1">
-                                <h5 class="card-title fw-bold mb-1 d-flex justify-content-between align-items-start">
+                                <h5 class="card-title fw-bold">
                                     <a href="{% url 'marketmates:forum_detail' forum.id %}"
                                        class="text-dark text-decoration-none">
                                         {{ forum.title }}
                                     </a>
-
-                                    <button class="btn p-0 border-0 bg-transparent trigger-unfav"
-                                            data-forum-id="{{ forum.id }}" title="Remove from Favorites">
-                                        <i class="bi bi-heart-fill text-danger fs-5"></i>
-                                        <span class="text-secondary ms-1">Remove</span>
-                                    </button>
                                 </h5>
 
-                                <p class="text-muted small mb-2 d-flex align-items-center">
-                                    <i class="bi bi-person-circle me-1"></i> <strong
-                                        class="me-2">{{ forum.created_by.username }}</strong>
-                                    <i class="bi bi-calendar ms-2 me-1"></i> {{ forum.created_at|date:"M d, Y" }}
-                                    <i class="bi bi-chat-dots-fill ms-3 me-1"></i> {{ forum.comment_set.count }}
-                                    comments
+                                <!-- Unfavorite Button -->
+                                <button class="btn p-0 border-0 bg-transparent position-absolute top-0 end-0 m-3 trigger-unfav"
+                                        data-forum-id="{{ forum.id }}" title="Remove from Favorites">
+                                    <i class="bi bi-heart-fill text-danger fs-5"></i>
+                                </button>
+
+                                <!-- Meta Info -->
+                                <p class="text-muted small mt-1 d-flex align-items-center">
+                                    {% if forum.created_by.profile_picture %}
+                                        <img src="{{ forum.created_by.profile_picture.url }}"
+                                             alt="{{ forum.created_by.username }}"
+                                             class="rounded-circle me-2"
+                                             style="width: 30px; height: 30px; object-fit: cover;">
+                                    {% else %}
+                                        <i class="bi bi-person-circle text-secondary fs-6 me-2"></i>
+                                    {% endif %}
+                                    <strong class="me-2">{{ forum.created_by.username }}</strong>
+                                    <span class="me-2">&bull;</span>
+                                    <i class="bi bi-calendar text-secondary me-1"></i>
+                                    <span class="ms-1">{{ forum.created_at|date:"M d, Y" }}</span>
                                 </p>
 
-                                <div class="d-flex flex-wrap">
-                                    {% for tag in forum.tags.all|slice:":3" %}
-                                        <a href="?q=%23{{ tag.tag_name }}"
-                                           class="badge text-white me-1 text-decoration-none mt-1"
-                                           style="background-color: #5D5FEF;">
-                                            #{{ tag.tag_name }}
-                                        </a>
-                                    {% endfor %}
+                                <!-- Tags & Comments -->
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <div class="d-flex flex-wrap">
+                                        {% for tag in forum.tags.all|slice:":3" %}
+                                            <a href="?q=%23{{ tag.tag_name }}"
+                                               class="badge text-white me-1 text-decoration-none mt-2"
+                                               style="background-color: #5D5FEF;">
+                                                #{{ tag.tag_name }}
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                    <p class="text-muted small mb-0 mt-2 text-end" style="width: 150px;">
+                                        <i class="bi bi-chat-dots-fill text-secondary me-1"></i>
+                                        {% if forum.comment_set.count > 99 %}
+                                            99+
+                                        {% else %}
+                                            {{ forum.comment_set.count }}
+                                        {% endif %}
+                                        Comments
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -61,6 +83,7 @@
         {% endif %}
     </div>
 
+    <!-- Unfavorite Confirm Modal -->
     <div class="modal fade" id="confirmUnfavModal" tabindex="-1" aria-labelledby="unfavModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -79,6 +102,7 @@
         </div>
     </div>
 
+    <!-- JS: Favorite Toggle -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             let selectedForumId = null;
@@ -90,6 +114,7 @@
                     unfavModal.show();
                 });
             });
+
             document.getElementById('confirmUnfavBtn').addEventListener('click', function () {
                 if (selectedForumId) {
                     fetch("{% url 'marketmates:toggle_favorite' %}", {
@@ -99,10 +124,9 @@
                             "Content-Type": "application/x-www-form-urlencoded"
                         },
                         body: `forum_id=${selectedForumId}`
-                    })
-                        .then(() => {
-                            window.location.reload();
-                        });
+                    }).then(() => {
+                        window.location.reload();
+                    });
                 }
             });
         });
