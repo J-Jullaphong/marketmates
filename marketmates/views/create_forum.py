@@ -3,9 +3,10 @@ import logging
 from django.views.generic import CreateView
 from django.shortcuts import redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count
+from django.db.models import Count, Q
+from django.utils import timezone
 
-from ..models import Forum, Tag, ChatRoom
+from ..models import Forum, Tag, Expert
 from ..forms import ForumForm
 
 db_logger = logging.getLogger('db')
@@ -21,7 +22,17 @@ class CreateForumView(LoginRequiredMixin, CreateView):
         """Adds popular tags and private chat rooms to the context."""
         context = super().get_context_data(**kwargs)
         context["tags"] = Tag.objects.annotate(forum_count=Count("forum")).order_by("-forum_count")[:5]
-        context["private_groups"] = ChatRoom.objects.filter(is_public=False)[:5]
+        first_day_of_month = timezone.now().replace(day=1)
+        context["top_experts"] = (
+            Expert.objects.filter(status="Approved")
+            .annotate(
+                fav_count=Count(
+                    'user__forum__favoriteforum',
+                    filter=Q(user__forum__favoriteforum__added_at__gte=first_day_of_month)
+                )
+            )
+            .order_by('-fav_count')[:5]
+        )
         return context
 
     def get_initial(self):
