@@ -4,6 +4,7 @@ from ..models import Forum, Tag
 
 
 class ForumForm(forms.ModelForm):
+    """A form for creating and editing forum posts."""
     tags = forms.CharField(
         max_length=255,
         required=False,
@@ -25,4 +26,4 @@ class ForumForm(forms.ModelForm):
         """Sanitize and split tags into a list."""
         tags_input = self.cleaned_data["tags"]
         tags_list = [tag.strip().lower() for tag in tags_input.split(",") if tag.strip()]
-        return tags_list  # Return a list of cleaned tag names
+        return tags_list

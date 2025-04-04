@@ -1,0 +1,317 @@
+{% extends "marketmates/base.html" %}
+{% load static %}
+
+{% block content %}
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Left Sidebar: Top Export & Popular Tags -->
+            <aside class="col-lg-3 col-md-4 d-none d-md-block sticky-sidebar">
+                <section class="card shadow-sm p-3 pb-1 mb-3">
+                    <h5 class="fw-bold text-primary mb-2.5">Top Experts</h5>
+                    <ul class="list-group list-unstyled ps-2">
+                        {% for expert in top_experts %}
+                            <li class="d-flex align-items-center py-2">
+                                <div class="me-2">
+                                    {% if forloop.counter == 1 %}
+                                        🥇
+                                    {% elif forloop.counter == 2 %}
+                                        🥈
+                                    {% elif forloop.counter == 3 %}
+                                        🥉
+                                    {% endif %}
+                                </div>
+                                <div class="me-2 flex-shrink-0">
+                                    {% if expert.user.profile_picture %}
+                                        <img src="{{ expert.user.profile_picture.url }}" alt="Profile Picture"
+                                             class="rounded-circle"
+                                             style="width: 30px; height: 30px; object-fit: cover;">
+                                    {% else %}
+                                        <img src="{% static 'images/person-circle.svg' %}" alt="Default Profile"
+                                             class="rounded-circle"
+                                             style="width: 30px; height: 30px; object-fit: cover;">
+                                    {% endif %}
+                                </div>
+                                <a href="{% url 'marketmates:expert_detail' expert.pk %}"
+                                    class="text-decoration-none text-dark fw-bold text-truncate d-block"
+                                    style="max-width: 200px;">
+                                    {{ expert.user.username }}
+                                </a>
+                                <div class="ms-auto text-muted small text-end" style="width: 100px;">
+                                    <i class="bi bi-file-text-fill text-secondary me-1"></i>
+                                    {% with expert.user.forum_set.count as forum_count %}
+                                        {% if forum_count > 99 %}
+                                            99+
+                                        {% else %}
+                                            {{ forum_count }}
+                                        {% endif %}
+                                    {% endwith %}
+                                    Forums
+                                </div>
+                            </li>
+                        {% empty %}
+                            <p class="text-muted">No ranking available.</p>
+                        {% endfor %}
+                    </ul>
+                </section>
+
+                <section class="card shadow-sm p-3 pb-1 mb-4">
+                    <h5 class="fw-bold text-primary mb-2.5">Popular Tags</h5>
+                    <ul class="list-group list-unstyled ps-2">
+                        {% for tag in tags %}
+                            <li class="d-flex align-items-center py-2">
+                                <a href="{% url 'marketmates:forum_list' %}?q=%23{{ tag.tag_name }}"
+                                   class="text-decoration-none text-dark fw-bold">
+                                    <span class="badge me-2"
+                                          style="background-color: #5D5FEF;">#{{ tag.tag_name }}</span>
+                                </a>
+                                <div class="ms-auto text-muted small text-end" style="width: 100px;">
+                                    <i class="bi bi-file-text-fill text-secondary me-1"></i>
+                                    {% with tag.forum_count as count %}
+                                        {% if count > 99 %}
+                                            99+
+                                        {% else %}
+                                            {{ count }}
+                                        {% endif %}
+                                    {% endwith %}
+                                    Forums
+                                </div>
+                            </li>
+
+                        {% empty %}
+                            <p class="text-muted">No tags available.</p>
+                        {% endfor %}
+                    </ul>
+                </section>
+            </aside>
+
+            <!-- Main Content: Search Results -->
+            <main class="col-lg-9 col-md-8 col-12">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    {% if query %}
+                        <h2>Search Results for "{{ query }}"</h2>
+                    {% else %}
+                        <h2>Community Forums</h2>
+                    {% endif %}
+
+                    <form method="GET" id="sortForm" class="d-flex align-items-center">
+                        <input type="hidden" name="q" value="{{ query }}">
+                        <label for="sort" class="me-2 fw-bold text-primary">
+                            <i class="bi bi-filter"></i> Sort By:
+                        </label>
+                        <div class="dropdown">
+                            <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="sortDropdown"
+                                    data-bs-toggle="dropdown">
+                                {% if request.GET.sort == "created_at" %}
+                                    <i class="bi bi-arrow-up"></i> Oldest
+                                {% else %}
+                                    <i class="bi bi-arrow-down"></i> Newest
+                                {% endif %}
+                            </button>
+
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item {% if request.GET.sort == '-created_at' or not request.GET.sort %}active{% endif %}"
+                                       href="?q={{ query }}&sort=-created_at">
+                                        <i class="bi bi-arrow-down"></i> Newest
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {% if request.GET.sort == 'created_at' %}active{% endif %}"
+                                       href="?q={{ query }}&sort=created_at">
+                                        <i class="bi bi-arrow-up"></i> Oldest
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </form>
+
+                </div>
+
+                {% if forums %}
+                    {% for forum in forums %}
+                        <article class="card shadow-sm border-0 mb-3">
+                            <div class="card-body d-flex align-items-start">
+                                {% with forum.get_first_image as image_url %}
+                                    {% if image_url %}
+                                        <img src="{{ image_url }}" class="rounded me-3 flex-shrink-0"
+                                             style="width: 100px; height: 100px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="rounded bg-light d-flex align-items-center justify-content-center me-3 flex-shrink-0"
+                                             style="width: 100px; height: 100px;">
+                                            <i class="bi bi-card-image text-muted fs-1"></i>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+
+                                <!-- Forum Details -->
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title fw-bold">
+                                        <a href="{% url 'marketmates:forum_detail' forum.id %}"
+                                           class="text-dark text-decoration-none">
+                                            {{ forum.title }}
+                                        </a>
+                                    </h5>
+                                    <div>
+                                        <!-- Favorite Button -->
+                                        <button class="btn p-0 border-0 bg-transparent position-absolute top-0 end-0 m-3 trigger-fav-modal"
+                                                data-forum-id="{{ forum.id }}">
+                                            {% if forum.id in favorite_forum_ids %}
+                                                <i class="bi bi-heart-fill text-danger fs-5"></i>
+                                            {% else %}
+                                                <i class="bi bi-heart text-secondary fs-5"></i>
+                                            {% endif %}
+                                        </button>
+                                    </div>
+                                    <p class="text-muted small mt-1 d-flex align-items-center">
+                                        {% if forum.created_by.profile_picture %}
+                                            <img src="{{ forum.created_by.profile_picture.url }}"
+                                                 alt="{{ forum.created_by.username }}"
+                                                 class="rounded-circle me-2"
+                                                 style="width: 30px; height: 30px; object-fit: cover;">
+                                        {% else %}
+                                            <i class="bi bi-person-circle text-secondary fs-6 me-2"></i>
+                                        {% endif %}
+                                        <strong class="me-2">{{ forum.created_by.username }}</strong>
+                                        <span class="me-2">&bull;</span>
+                                        <i class="bi bi-calendar text-secondary me-1"></i>
+                                        <span class="ms-1">{{ forum.created_at|date:"M d, Y" }}</span>
+                                    </p>
+
+                                    <!-- Tags & Comments -->
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <div class="d-flex flex-wrap">
+                                            {% for tag in forum.tags.all|slice:":3" %}
+                                                <a href="?q=%23{{ tag.tag_name }}"
+                                                   class="badge text-white me-1 text-decoration-none mt-2"
+                                                   style="background-color: #5D5FEF;">
+                                                    #{{ tag.tag_name }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                        <p class="text-muted small mb-0 mt-2 text-end" style="width: 150px;">
+                                            <i class="bi bi-chat-dots-fill text-secondary me-1"></i>
+                                            {% if forum.comment_set.count > 99 %}
+                                                99+
+                                            {% else %}
+                                                {{ forum.comment_set.count }}
+                                            {% endif %}
+                                            Comments
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    {% endfor %}
+
+                    {% if is_paginated %}
+                        <nav aria-label="Forum Pagination" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                           href="?q={{ query }}&sort={{ sort_order }}&page={{ page_obj.previous_page_number }}">
+                                            Previous
+                                        </a>
+                                    </li>
+                                {% endif %}
+
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if num == page_obj.number %}
+                                        <li class="page-item active" aria-current="page">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+                                        <li class="page-item">
+                                            <a class="page-link"
+                                               href="?q={{ query }}&sort={{ sort_order }}&page={{ num }}">
+                                                {{ num }}
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                           href="?q={{ query }}&sort={{ sort_order }}&page={{ page_obj.next_page_number }}">
+                                            Next
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted">No forums found matching your search.</p>
+                {% endif %}
+            </main>
+            <!-- Favorite Confirm Modal -->
+            <div class="modal fade" id="confirmFavModal" tabindex="-1" aria-labelledby="favModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="favModalLabel">Confirm Action</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" id="favModalBody">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                            <button type="button" class="btn btn-primary" id="confirmFavBtn">Yes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let selectedForumId = null;
+            let isCurrentlyFavorited = false;
+
+            const favModal = new bootstrap.Modal(document.getElementById('confirmFavModal'));
+            const modalTitle = document.getElementById('favModalLabel');
+            const modalBody = document.getElementById('favModalBody');
+            const confirmBtn = document.getElementById('confirmFavBtn');
+
+            document.querySelectorAll('.trigger-fav-modal').forEach(button => {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    selectedForumId = this.dataset.forumId;
+                    const icon = this.querySelector('i');
+
+                    isCurrentlyFavorited = icon.classList.contains('bi-heart-fill');
+
+                    if (isCurrentlyFavorited) {
+                        modalTitle.textContent = "Remove from Favorites";
+                        modalBody.textContent = "Do you want to remove this forum from your favorites?";
+                    } else {
+                        modalTitle.textContent = "Add to Favorites";
+                        modalBody.textContent = "Do you want to save this forum to your favorites?";
+                    }
+
+                    favModal.show();
+                });
+            });
+
+            confirmBtn.addEventListener('click', function () {
+                if (selectedForumId) {
+                    fetch("{% url 'marketmates:toggle_favorite' %}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}",
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: `forum_id=${selectedForumId}`
+                    })
+                        .then(() => {
+                            favModal.hide();
+                            window.location.reload();
+                        });
+                }
+            });
+        });
+    </script>
+{% endblock %}

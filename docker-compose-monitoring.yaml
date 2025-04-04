@@ -1,0 +1,64 @@
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: prometheus
+    platform: linux/amd64
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      node-exporter:
+        condition: service_healthy
+    restart: always
+    networks:
+      - marketmates
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    container_name: node_exporter
+    platform: linux/amd64
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:9100/metrics"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: always
+    networks:
+      - marketmates
+
+  grafana:
+    image: grafana/grafana-oss:11.6.0
+    container_name: grafana
+    platform: linux/amd64
+    depends_on:
+      prometheus:
+        condition: service_started
+    environment:
+      - GF_SERVER_ROOT_URL=https://localhost/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SECURITY_ADMIN_USER__FILE=/run/secrets/grafana_admin_user
+      - GF_SECURITY_ADMIN_PASSWORD__FILE=/run/secrets/grafana_admin_password
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
+    secrets:
+      - grafana_admin_user
+      - grafana_admin_password
+    restart: always
+    networks:
+      - marketmates
+
+volumes:
+  grafana_data:
+  prometheus_data:
+
+secrets:
+  grafana_admin_user:
+    file: ./secrets/grafana_admin_user
+  grafana_admin_password:
+    file: ./secrets/grafana_admin_password
+
+networks:
+  marketmates:
+    external: true

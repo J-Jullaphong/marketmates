@@ -1,9 +1,13 @@
+import logging
+
 from django.contrib import messages
 from django.contrib.auth import login
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
 
 from ..forms import UserRegistrationForm, ExpertRegistrationForm
+
+db_logger = logging.getLogger('db')
 
 
 class RegistrationFormView(TemplateView):
@@ -36,10 +40,13 @@ class RegistrationFormView(TemplateView):
             user = form.save()
             if form_type == 'verified_expert':
                 messages.success(self.request, "Registration successful. Your account will be activated once approved.")
+                db_logger.info(f"Expert registration submitted for approval: {user.username} ({user.email})")
             else:
                 login(request, user)
                 messages.success(request, "Registration successful. Welcome!")
+                db_logger.info(f"User registered and logged in: {user.username} ({user.email})")
                 return redirect('marketmates:home')
 
         messages.error(self.request, "There was an error with your submission.")
+        db_logger.warning(f"Registration failed. Form type: {form_type}. Errors: {form.errors.as_json()}")
         return self.render_to_response(self.get_context_data(form=form))

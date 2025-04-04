@@ -47,5 +47,6 @@ urlpatterns = [
          PasswordResetCompleteView.as_view(
              template_name='registration/password_reset_complete.html'),
          name='password_reset_complete'),
+    path('inbox/notifications/', include('notifications.urls', namespace='notifications')),
     path('<path:undefined_path>/', UnavailableView.as_view(), name="404"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

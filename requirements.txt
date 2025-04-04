@@ -1,6 +1,7 @@
-Django
+Django==4.2.20
 django-ckeditor-5==0.2.15
 django-storages
+django-db-logger
 python-decouple
 psycopg2-binary
 boto3
@@ -11,7 +12,10 @@ bs4
 daphne
 selenium
 pandas
-yfinance
+yfinance==0.2.54
 celery
 redis
 django-redis
+lxml
+gunicorn
+django-notifications-hq

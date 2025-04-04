@@ -10,8 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
+import sys
 from pathlib import Path
 from decouple import config, Csv
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,12 +39,15 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.humanize',
     'daphne',
     'django.contrib.staticfiles',
     'marketmates.apps.MarketmatesConfig',
     'django_ckeditor_5',
     'storages',
     'channels',
+    'notifications',
+    'django_db_logger',
 ]
 
 MIDDLEWARE = [
@@ -54,6 +59,36 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(asctime)s %(message)s'
+        },
+    },
+    'handlers': {
+        'db_log': {
+            'level': 'DEBUG',
+            'class': 'django_db_logger.db_log_handler.DatabaseLogHandler'
+        },
+    },
+    'loggers': {
+        'db': {
+            'handlers': ['db_log'],
+            'level': 'DEBUG'
+        },
+        'django.request': {
+            'handlers': ['db_log'],
+            'level': 'ERROR',
+            'propagate': False,
+        }
+    }
+}
 
 ROOT_URLCONF = 'mysite.urls'
 
@@ -79,7 +114,17 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
+# Check if the tests are running
+if 'test' in sys.argv:
+    # Override the DATABASES setting with the TEST_DATABASES configuration
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'test_db.sqlite3',
+        }
+    }
+else:
+    DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': config('PGDATABASE'),
@@ -140,7 +185,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = '/static'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = '/media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -148,6 +197,8 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'marketmates.User'
+
+LOGIN_URL = '/login/'
 
 # AWS S3
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
@@ -190,6 +241,10 @@ CKEDITOR_5_CONFIGS = {
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 CELERY_BROKER_URL = config('CELERY_BROKER_URL')
+result_backend = config('CELERY_BROKER_URL')
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+SELENIUM_REMOTE_URL = config('SELENIUM_REMOTE_URL')
 
 CACHES = {
     'default': {
@@ -202,10 +257,25 @@ CACHES = {
     }
 }
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
+if not DEBUG:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [config('REDIS_CHANNELS_URL')],
+            },
+        },
     }
-}
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer"
+        }
+    }
+
 
 ASGI_APPLICATION = "mysite.asgi.application"
+
+if not DEBUG:
+    CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', cast=Csv(), default=[])
+    CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', False)

@@ -5,7 +5,7 @@
     <h2 class="mb-3 text-center">My Chat Rooms</h2>
 
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-lg-6 col-md-8 col-sm-12 col-12">
             <div class="card shadow-sm p-4 mb-4">
                 <h5 class="d-flex justify-content-between align-items-center">
                     Chat Rooms
@@ -19,22 +19,48 @@
                 {% if chatrooms %}
                     <ul class="list-group">
                         {% for chat_room in chatrooms %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <li class="list-group-item d-flex justify-content-between align-items-center" data-room-id="{{ chat_room.id }}">
                                 <div>
                                     <a href="{% url 'marketmates:chat_room_page' chat_room.id %}" class="text-decoration-none">
                                         <strong>{{ chat_room.name }}</strong>
                                     </a>
-                                    <div class="text-muted" style="font-size: 0.9rem;">
-                                         {% with chat_room.id as room_id %}
-                                            {% for message in last_messages %}
-                                                {% if message.chat_room.id == room_id %}
+                                    <div class="text-muted latest-message" style="font-size: 0.9rem;">
+                                        {% for message in last_messages %}
+                                            {% if message.chat_room.id == chat_room.id %}
+                                                <div class="text-muted latest-message">
                                                     <em>{{ message.text|truncatewords:5 }}</em>
-                                                {% endif %}
-                                            {% endfor %}
-                                        {% endwith %}
+                                                    {% if not message.text and message.image %}
+                                                        <em>{{ message.sender }} sent an image.</em>
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
                                     </div>
                                 </div>
-                                <span class="text-muted">Members: {{ chat_room.members.count }}</span>
+
+                                <div class="d-flex align-items-center gap-3">
+                                    {% with chat_room.id|stringformat:"s" as room_id_str %}
+                                        {% for unread in unread_notifications %}
+                                            {% if unread.target_object_id|stringformat:"s" == room_id_str %}
+                                                <span class="badge bg-danger rounded-pill unread-badge" data-room-id="{{ chat_room.id }}">
+                                                    {{ unread.unread_count }}
+                                                </span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endwith %}
+
+                                    <span class="text-muted latest-time" style="font-size: 0.75rem;">
+                                        {% for message in last_messages %}
+                                            {% if message.chat_room.id == chat_room.id %}
+                                                {% if message.timestamp|date:"Y-m-d" == today_date %}
+                                                    {{ message.timestamp|time:"H:i" }}
+                                                {% else %}
+                                                    {{ message.timestamp|date:"d/m/Y" }}
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </span>
+                                </div>
                             </li>
                         {% endfor %}
                     </ul>
@@ -59,12 +85,6 @@
                                     <label for="id_name" class="form-label">Chat Room Name</label>
                                     {{ form.name }}
                                     <div class="form-text">Choose a name for your chat room.</div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="id_capacity" class="form-label">Capacity</label>
-                                    {{ form.capacity }}
-                                    <div class="form-text">Set the maximum number of members allowed.</div>
                                 </div>
 
                                 <div class="mb-3">
@@ -93,13 +113,98 @@
 
 {% block extra_js %}
 <script>
+    const currentUsername = "{{ request.user.username|escapejs }}";
+    const userSocket = new WebSocket(
+        (window.location.protocol === "https:" ? "wss://" : "ws://") +
+        window.location.host + "/ws/user/" + currentUsername + "/"
+    );
+
+    userSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+
+        if (data.type === "room_preview") {
+            const roomId = data.room_id;
+            const chatItem = document.querySelector(`[data-room-id="${roomId}"]`);
+
+            if (chatItem) {
+                const latestMessage = data.image_url
+                    ? `<em>${data.message ? data.message : `${data.sender} sent an image.`}</em>`
+                    : `<em>${data.message}</em>`;
+
+                const timestamp = new Date(data.timestamp);
+                const now = new Date();
+                let displayTime;
+
+                if (
+                    timestamp.getFullYear() === now.getFullYear() &&
+                    timestamp.getMonth() === now.getMonth() &&
+                    timestamp.getDate() === now.getDate()
+                ) {
+                    displayTime = timestamp.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    });
+                } else {
+                    displayTime = timestamp.toLocaleDateString('en-GB');
+                }
+
+                chatItem.querySelector(".latest-message").innerHTML = latestMessage;
+                chatItem.querySelector(".latest-time").innerHTML = displayTime;
+
+                const parent = chatItem.parentNode;
+                parent.removeChild(chatItem);
+                parent.insertBefore(chatItem, parent.firstChild);
+
+                let badge = chatItem.querySelector(".unread-badge");
+
+                if (badge) {
+                    let current = parseInt(badge.textContent || "0");
+                    badge.textContent = current + 1;
+                    badge.style.display = "inline-block";
+                } else {
+                    badge = document.createElement("span");
+                    badge.className = "badge bg-danger rounded-pill unread-badge ms-2";
+                    badge.setAttribute("data-room-id", roomId);
+                    badge.textContent = 1;
+
+                    const badgeContainer = chatItem.querySelector(".d-flex.align-items-center.gap-3");
+                    if (badgeContainer) {
+                        badgeContainer.insertBefore(badge, badgeContainer.querySelector(".latest-time"));
+                    }
+                }
+            }
+        }
+    };
+</script>
+
+<script>
     document.addEventListener('DOMContentLoaded', function () {
         const modal = document.getElementById('createChatRoomModal');
         const form = modal.querySelector('form');
         const searchInput = document.getElementById('searchMembers');
+        const searchChatRooms = document.getElementById('searchChatRooms');
         const suggestionsList = document.getElementById('memberSuggestions');
         const selectedMembersList = document.getElementById('selectedMembersList');
         const selectedMembersInput = document.getElementById('selectedMembersInput');
+
+        const chatRoomListItems = document.querySelectorAll('.list-group-item');
+
+        searchChatRooms.addEventListener('input', function () {
+            const query = searchChatRooms.value.trim().toLowerCase();
+
+            chatRoomListItems.forEach(chatRoom => {
+                const chatRoomNameElement = chatRoom.querySelector('a strong');
+                if (chatRoomNameElement) {
+                    const chatRoomName = chatRoomNameElement.textContent.trim().toLowerCase();
+                    if (chatRoomName.includes(query)) {
+                        chatRoom.classList.remove('d-none');
+                    } else {
+                        chatRoom.classList.add('d-none');
+                    }
+                }
+            });
+        });
 
         const allUsers = JSON.parse('{{ users_json|escapejs }}');
         let selectedMemberIds = [];
@@ -123,7 +228,7 @@
         });
 
         function updateSelectedMembersInput() {
-            selectedMembersInput.value = selectedMemberIds.join(','); // Store as a comma-separated string
+            selectedMembersInput.value = selectedMemberIds.join(',');
         }
 
         function displaySuggestions(query) {

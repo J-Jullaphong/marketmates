@@ -1,0 +1,187 @@
+{
+  "id": null,
+  "title": "System Overview (Node Exporter)",
+  "timezone": "browser",
+  "editable": true,
+  "schemaVersion": 36,
+  "version": 2,
+  "refresh": "10s",
+  "panels": [
+    {
+      "title": "CPU Usage (%)",
+      "type": "graph",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "percent",
+          "label": "CPU",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "format": "short"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Memory Usage (%)",
+      "type": "graph",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "percent",
+          "label": "Memory",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "format": "short"
+        }
+      ],
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Disk Usage (%)",
+      "type": "graph",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "(node_filesystem_size_bytes{fstype!~\"tmpfs|overlay\"} - node_filesystem_free_bytes{fstype!~\"tmpfs|overlay\"}) / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay\"} * 100",
+          "legendFormat": "{{instance}} {{mountpoint}}"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "percent",
+          "label": "Disk",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "format": "short"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Filesystem Fill (%)",
+      "type": "graph",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "(node_filesystem_size_bytes{fstype!~\"tmpfs|overlay\"} - node_filesystem_free_bytes{fstype!~\"tmpfs|overlay\"}) / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay\"} * 100",
+          "legendFormat": "{{instance}} {{mountpoint}}"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "percent",
+          "label": "Used",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "format": "short"
+        }
+      ],
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Network Traffic (bytes/s)",
+      "type": "graph",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "irate(node_network_receive_bytes_total{device!~\"lo\"}[5m])",
+          "legendFormat": "{{instance}} RX"
+        },
+        {
+          "expr": "irate(node_network_transmit_bytes_total{device!~\"lo\"}[5m])",
+          "legendFormat": "{{instance}} TX"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "bytes",
+          "label": "Traffic"
+        },
+        {
+          "format": "short"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 24,
+        "h": 8
+      }
+    },
+    {
+      "title": "Load Average (1m)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "node_load1",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Uptime (seconds)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "node_time_seconds - node_boot_time_seconds",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "gridPos": {
+        "x": 6,
+        "y": 24,
+        "w": 6,
+        "h": 4
+      }
+    }
+  ]
+}

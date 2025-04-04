@@ -18,9 +18,11 @@ class UserRegistrationForm(UserCreationForm):
         }
         widgets = {
             'email': forms.EmailInput(attrs={'placeholder': 'Email'}),
+            'username': forms.TextInput(attrs={'placeholder': 'Username'}),
         }
 
     def __init__(self, *args, **kwargs):
+        """Initialize form fields with required attributes and styling."""
         super().__init__(*args, **kwargs)
         for field_name in self.fields:
             self.fields[field_name].required = True

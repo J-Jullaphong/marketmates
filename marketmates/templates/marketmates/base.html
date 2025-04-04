@@ -1,6 +1,23 @@
 {% load static %}
+{% load notifications_tags %}
 <!DOCTYPE html>
 <html lang="en">
+<style>
+    .notification-badge {
+        background-color: #dc3545;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 999px;
+        line-height: 1.2;
+        min-width: 20px;
+        text-align: center;
+        white-space: nowrap;
+        z-index: 10;
+        top: -4px; 
+        right: -10px;
+    }
+</style>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -21,7 +38,7 @@
     {% block header %}
     {% endblock %}
 </head>
-<body style="padding: 70px;">
+<body style="padding-top: 70px;">
 
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg shadow fixed-top" style="background-color: #5D5FEF;">
@@ -32,8 +49,8 @@
             <img src="{% static 'images/logo.svg' %}" alt="MarketMates" class="me-2" height="40">
         </a>
 
-        <!-- Navbar Content -->
-        <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+        <!-- Navbar Content (Laptop) -->
+        <div class="collapse navbar-collapse justify-content-center d-none d-lg-flex" id="navbarNav">
             <ul class="navbar-nav gap-4">
                 <li class="nav-item">
                     <a href="{% url 'marketmates:home' %}" class="nav-link text-white">
@@ -46,19 +63,18 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link text-white">
+                    <a href="{% url 'marketmates:forum_list' %}" class="nav-link text-white">
                         <i class="bi bi-people-fill fs-4"></i>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link text-white">
+                    <a href="{% url 'marketmates:expert_list' %}" class="nav-link text-white">
                         <i class="bi bi-mortarboard-fill fs-4"></i>
                     </a>
                 </li>
             </ul>
 
-            <!-- Centered Search Bar -->
-            <form class="d-flex mx-auto w-50" action="{% url 'marketmates:search_forums' %}" method="GET">
+            <form class="d-flex mx-auto w-50" action="{% url 'marketmates:forum_list' %}" method="GET">
                 <div class="input-group">
                     <input type="text" name="q" class="form-control" placeholder="Search for forums..."
                            aria-label="Search" value="{{ query }}">
@@ -69,15 +85,19 @@
             </form>
         </div>
 
-        <!-- Icons & Profile Dropdown -->
-        <div class="d-flex align-items-center">
-            <a href="#" class="text-white me-5"><i class="bi bi-bell-fill fs-4"></i></a>
-            <a href="{% url "marketmates:chat_room_list" %}" class="text-white me-5"><i class="bi bi-chat-dots-fill fs-4"></i></a>
+        <!-- Icons & Profile Dropdown (Laptop) -->
+        <div class="d-none d-lg-flex align-items-center">
+            <a href="{% url 'marketmates:notification_list' %}" class="text-white me-5"><i class="bi bi-bell-fill fs-4 position-relative">
+                <span class="notification-badge general-notify-badge position-absolute" style="display: none;"></span>
+            </i></a>
+            <a href="{% url 'marketmates:chat_room_list' %}" class="text-white me-5"><i class="bi bi-chat-dots-fill fs-4 position-relative">
+                <span class="notification-badge chat-notify-badge position-absolute" style="display: none;"></span>
+            </i></a>
 
             {% if user.is_authenticated %}
                 <!-- User Profile Dropdown -->
                 <div class="dropdown">
-                    <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown">
+                    <a class="nav-link dropdown-toggle text-white" role="button" data-bs-toggle="dropdown">
                         {% if user.profile_picture %}
                             <img src="{{ user.profile_picture.url }}" alt="Profile Picture"
                                  class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
@@ -87,25 +107,72 @@
                         <span class="ms-2">{{ user.username }}</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="{% url "marketmates:profile" %}">Profile</a></li>
-                        <li><a class="dropdown-item" href="#">Settings</a></li>
+                        <li><a class="dropdown-item" href="{% url 'marketmates:profile' %}">Profile</a></li>
+                        <li><a class="dropdown-item" href="{% url 'marketmates:favorite_forum_list' %}">Favorite Forums</a></li>
                         <li>
                             <hr class="dropdown-divider">
                         </li>
-                        <form method="POST"
-                              action="{% url 'marketmates:logout' %}?next=/"
-                              class="d-inline">
+                        <form method="POST" action="{% url 'marketmates:logout' %}?next=/">
                             {% csrf_token %}
-                            <button type="submit" class="dropdown-item">
-                                Log Out
-                            </button>
+                            <button type="submit" class="dropdown-item">Log Out</button>
                         </form>
                     </ul>
                 </div>
             {% else %}
-                <!-- Login Link -->
                 <a href="{% url 'marketmates:login' %}" class="text-white me-5">Login</a>
             {% endif %}
+        </div>
+
+        <!-- Dropdown for Mobile (☰) -->
+        <div class="dropdown d-lg-none">
+            <button class="btn text-white dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-list fs-2"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end p-2" id="navbarDropdownMenu" style="min-width: 250px;">
+                <li>
+                    <form class="d-flex" action="{% url 'marketmates:forum_list' %}" method="GET">
+                        <div class="input-group">
+                            <input type="text" name="q" class="form-control" placeholder="Search for forums..."
+                                   value="{{ query }}">
+                            <button class="btn btn-light" type="submit"><i class="fas fa-search"></i></button>
+                        </div>
+                    </form>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+
+                <li><a class="dropdown-item" href="{% url 'marketmates:home' %}"><i class="bi bi-house-door-fill"></i> Home</a></li>
+                <li><a class="dropdown-item" href="{% url 'marketmates:market_update' %}"><i class="bi bi-calendar-fill"></i> Market Updates</a></li>
+                <li><a class="dropdown-item" href="{% url 'marketmates:forum_list' %}"><i class="bi bi-people-fill"></i> Community Forums</a></li>
+                <li><a class="dropdown-item" href="{% url 'marketmates:expert_list' %}"><i class="bi bi-mortarboard-fill"></i> Verified Experts</a></li>
+                <li><hr class="dropdown-divider"></li>
+
+                {% if user.is_authenticated %}
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center" href="{% url 'marketmates:chat_room_list' %}">
+                        <i class="bi bi-chat-dots-fill me-1"></i> Chat
+                        <span class="badge bg-danger text-white chat-notify-badge ms-auto" style="display: none;"></span>
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center" href="{% url 'marketmates:notification_list' %}">
+                        <i class="bi bi-bell-fill me-1"></i> Notifications
+                        <span class="badge bg-danger text-white general-notify-badge ms-auto" style="display: none;"></span>
+                      </a>
+                    </li>
+
+                    <li><a class="dropdown-item" href="{% url 'marketmates:profile' %}"><i class="bi bi-person-circle"></i> Profile</a></li>
+                    <li><a class="dropdown-item" href="{% url 'marketmates:favorite_forum_list' %}"><i class="bi bi-bookmark-heart-fill"></i> Favorite Forums</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form method="POST" action="{% url 'marketmates:logout' %}?next=/">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item">Log Out</button>
+                        </form>
+                    </li>
+                {% else %}
+                    <li><a class="dropdown-item" href="{% url 'marketmates:login' %}"><i class="bi bi-box-arrow-in-right"></i> Login</a></li>
+                {% endif %}
+            </ul>
         </div>
     </div>
 </nav>
@@ -121,10 +188,48 @@
 {% endif %}
 
 <!-- Main Content -->
-<div class="container mt-4">
+<div class="container-fluid w-100 px-0">
     {% block content %}
     {% endblock %}
 </div>
+
+<script src="{% static 'notifications/notify.js' %}"></script>
+<script>
+    function formatCount(count) {
+        return count > 99 ? '99+' : count.toString();
+    }
+    
+    function update_general_notify_badge(data) {
+        const badges = document.querySelectorAll('.general-notify-badge');
+        const nonChatNotis = data.unread_list.filter(noti => noti.level !== 'chat');
+
+        badges.forEach(badge => {
+            if (nonChatNotis.length > 0) {
+                badge.textContent = formatCount(nonChatNotis.length);
+                badge.style.display = 'inline-block';
+            } else {
+                badge.textContent = '';
+                badge.style.display = 'none';
+            }
+        });
+    }
+    
+    function update_chat_notify_badge(data) {
+        const badges = document.querySelectorAll('.chat-notify-badge');
+        const chatNotis = data.unread_list.filter(noti => noti.level === 'chat');
+
+        badges.forEach(badge => {
+            if (chatNotis.length > 0) {
+                badge.textContent = formatCount(chatNotis.length);
+                badge.style.display = 'inline-block';
+            } else {
+                badge.textContent = '';
+                badge.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% register_notify_callbacks callbacks='fill_notification_list,fill_notification_badge,update_general_notify_badge,update_chat_notify_badge' refresh_period=10 fetch=100 %}
 
 </body>
 </html>

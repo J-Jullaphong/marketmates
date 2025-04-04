@@ -1,9 +1,15 @@
 from django import forms
-from django.db import transaction
-from ..models import ChatRoom, User
+
+from ..models import ChatRoom
 
 
 class ChatRoomForm(forms.ModelForm):
+    """Form for creating chat rooms."""
+
     class Meta:
         model = ChatRoom
-        fields = ['name', 'capacity']
+        fields = ['name']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control',
+                                           'placeholder': 'A name of your chatroom...'}),
+        }

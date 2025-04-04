@@ -8,43 +8,78 @@
 {% block content %}
     <div class="container-fluid mt-4">
     <div class="row">
-        <!-- Left Sidebar: Popular Tags & Private Groups -->
-        <aside class="col-lg-3 sticky-sidebar">
-            <section class="mb-4">
-                <h5 class="fw-bold text-primary">Popular Tags</h5>
-                <ul class="list-group">
+        <!-- Left Sidebar: Top Experts & Popular Tags -->
+        <aside class="col-lg-3 col-md-4 d-none d-md-block sticky-sidebar">
+            <!-- Top Experts Section -->
+            <section class="card shadow-sm p-3 pb-1 mb-3">
+                <h5 class="fw-bold text-primary mb-2.5">Top Experts</h5>
+                <ul class="list-group list-unstyled ps-2">
+                    {% for expert in top_experts %}
+                        <li class="d-flex align-items-center py-2">
+                            <div class="me-2">
+                                {% if forloop.counter == 1 %}🥇
+                                {% elif forloop.counter == 2 %}🥈
+                                {% elif forloop.counter == 3 %}🥉
+                                {% endif %}
+                            </div>
+                            <div class="me-2 flex-shrink-0">
+                                {% if expert.user.profile_picture %}
+                                    <img src="{{ expert.user.profile_picture.url }}" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
+                                {% else %}
+                                    <img src="{% static 'images/person-circle.svg' %}" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
+                                {% endif %}
+                            </div>
+                            <a href="{% url 'marketmates:expert_detail' expert.pk %}" class="text-decoration-none text-dark fw-bold">{{ expert.user.username }}</a>
+                            <div class="ms-auto text-muted small text-end" style="width: 100px;">
+                                <i class="bi bi-file-text-fill text-secondary me-1"></i>
+                                {% with expert.user.forum_set.count as forum_count %}
+                                    {% if forum_count > 99 %}99+{% else %}{{ forum_count }}{% endif %}
+                                {% endwith %} Forums
+                            </div>
+                        </li>
+                    {% empty %}
+                        <p class="text-muted">No ranking available.</p>
+                    {% endfor %}
+                </ul>
+            </section>
+
+            <!-- Popular Tags Section -->
+            <section class="card shadow-sm p-3 pb-1 mb-4">
+                <h5 class="fw-bold text-primary mb-2.5">Popular Tags</h5>
+                <ul class="list-group list-unstyled ps-2">
                     {% for tag in tags %}
-                        <li class="list-group-item border-0 d-flex align-items-center">
-                            <a href="{% url 'marketmates:search_forums' %}?q=%23{{ tag.tag_name }}"
-                               class="text-decoration-none">
+                        <li class="d-flex align-items-center py-2">
+                            <a href="{% url 'marketmates:forum_list' %}?q=%23{{ tag.tag_name }}" class="text-decoration-none text-dark fw-bold">
                                 <span class="badge me-2" style="background-color: #5D5FEF;">#{{ tag.tag_name }}</span>
                             </a>
-                            <small class="text-muted">{{ tag.forum_count }} Posts</small>
+                            <div class="ms-auto text-muted small text-end" style="width: 100px;">
+                                <i class="bi bi-file-text-fill text-secondary me-1"></i>
+                                {% with tag.forum_count as count %}
+                                    {% if count > 99 %}99+{% else %}{{ count }}{% endif %}
+                                {% endwith %} Forums
+                            </div>
                         </li>
                     {% empty %}
                         <p class="text-muted">No tags available.</p>
                     {% endfor %}
                 </ul>
             </section>
-            <section>
-                <h5 class="fw-bold text-primary">Private Groups</h5>
-                <ul class="list-group">
-                    {% for group in private_groups %}
-                        <li class="list-group-item border-0">
-                            <i class="bi bi-people-fill text-secondary"></i>
-                            <strong>{{ group.name }}</strong> ({{ group.members.count }} members)
-                        </li>
-                    {% empty %}
-                        <p class="text-muted">No private groups available.</p>
-                    {% endfor %}
-                </ul>
-            </section>
         </aside>
 
         <!-- Main: Forum Content -->
-        <main class="col-lg-6">
-            <!-- Forum Content -->
-            <article class="card shadow-sm border-0 p-4">
+        <main class="col-lg-9">
+            <article class="card shadow-sm border-0 p-4 position-relative">
+                {% if user.is_authenticated %}
+                    <button class="btn p-0 border-0 bg-transparent position-absolute top-0 end-0 m-2 trigger-fav-modal"
+                            data-forum-id="{{ forum.id }}">
+                        {% if is_favorited %}
+                            <i class="bi bi-heart-fill text-danger fs-5"></i>
+                        {% else %}
+                            <i class="bi bi-heart text-secondary fs-5"></i>
+                        {% endif %}
+                    </button>
+                {% endif %}
+
                 <div class="d-flex align-items-center mb-3">
                     <i class="bi bi-person-circle fs-4 me-2"></i>
                     <div>
@@ -52,6 +87,7 @@
                         <small class="text-muted">{{ forum.created_at|timesince }} ago</small>
                     </div>
                 </div>
+
                 <h3 class="fw-bold">{{ forum.title }}</h3>
 
                 {% with forum.get_images as images %}
@@ -69,18 +105,15 @@
                 {% endwith %}
 
                 <!-- Image Modal -->
-                <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel"
-                     aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered modal-xl">  <!-- 🔹 Make modal extra-large -->
+                <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-xl">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title">Image Preview</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body text-center">
-                                <img id="modalImage" src="" class="img-fluid rounded image-enlarge"
-                                     alt="Enlarged Image">
+                                <img id="modalImage" src="" class="img-fluid rounded image-enlarge" alt="Enlarged Image">
                             </div>
                         </div>
                     </div>
@@ -110,16 +143,16 @@
                     </div>
                 </section>
             {% else %}
-                <section class=" mt-4
-                            ">
+                <section class="mt-4">
                     <p class="text-muted text-center">You must be logged in to leave a response.</p>
                 </section>
             {% endif %}
 
             <!-- Comment Section -->
             <section class="mt-4">
-                <h5 class="fw-bold text-primary">Responses <span
-                        class="badge bg-secondary">{{ comments.count }}</span></h5>
+                <h5 class="fw-bold text-primary">Responses
+                    <span class="badge bg-secondary">{{ comments.count }}</span>
+                </h5>
 
                 {% for comment in comments %}
                     <div class="card shadow-sm border-0 mb-3 p-3">
@@ -127,8 +160,23 @@
                             <i class="bi bi-person-circle fs-4 me-2"></i>
                             <strong>{{ comment.user.username }}</strong>
                         </div>
+
+                        {% with comment.get_images as images %}
+                            {% if images %}
+                                <div class="d-flex overflow-auto mt-3 image-gallery">
+                                    {% for img in images %}
+                                        <img src="{{ img }}" class="rounded shadow-sm img-thumbnail image-preview"
+                                             data-bs-toggle="modal" data-bs-target="#imageModal"
+                                             data-src="{{ img }}"
+                                             style="height: 150px; width: auto; object-fit: cover; cursor: pointer;"
+                                             alt="Comment Image">
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+
                         <div class="ck-content mt-2">
-                            {{ comment.comment_content|safe }}
+                            {{ comment.get_formatted_content|safe }}
                         </div>
                     </div>
                 {% empty %}
@@ -136,20 +184,75 @@
                 {% endfor %}
             </section>
         </main>
-
-        <!-- Right Sidebar: Empty-->
-        <div class="col-lg-3"></div>
     </div>
 
+    <!-- Favorite Confirm Modal -->
+    <div class="modal fade" id="confirmFavModal" tabindex="-1" aria-labelledby="favModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="favModalLabel">Confirm Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="favModalBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                    <button type="button" class="btn btn-primary" id="confirmFavBtn">Yes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            let imageModal = document.getElementById("imageModal");
-            let modalImage = document.getElementById("modalImage");
+            // Image preview modal
+            const modalImage = document.getElementById("modalImage");
             document.querySelectorAll(".image-preview").forEach(image => {
                 image.addEventListener("click", function () {
-                    let imgSrc = this.getAttribute("data-src");
-                    modalImage.setAttribute("src", imgSrc);
+                    modalImage.src = this.getAttribute("data-src");
                 });
+            });
+
+            // Favorite modal logic
+            let selectedForumId = null;
+            let isCurrentlyFavorited = false;
+
+            const favModal = new bootstrap.Modal(document.getElementById('confirmFavModal'));
+            const modalTitle = document.getElementById('favModalLabel');
+            const modalBody = document.getElementById('favModalBody');
+            const confirmBtn = document.getElementById('confirmFavBtn');
+
+            document.querySelectorAll('.trigger-fav-modal').forEach(button => {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    selectedForumId = this.dataset.forumId;
+                    const icon = this.querySelector('i');
+                    isCurrentlyFavorited = icon.classList.contains('bi-heart-fill');
+
+                    modalTitle.textContent = isCurrentlyFavorited ? "Remove from Favorites" : "Add to Favorites";
+                    modalBody.textContent = isCurrentlyFavorited
+                        ? "Do you want to remove this forum from your favorites?"
+                        : "Do you want to save this forum to your favorites?";
+
+                    favModal.show();
+                });
+            });
+
+            confirmBtn.addEventListener('click', function () {
+                if (selectedForumId) {
+                    fetch("{% url 'marketmates:toggle_favorite' %}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}",
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: `forum_id=${selectedForumId}`
+                    }).then(() => {
+                        favModal.hide();
+                        window.location.reload();
+                    });
+                }
             });
         });
     </script>

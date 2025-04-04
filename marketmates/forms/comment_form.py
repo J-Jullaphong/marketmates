@@ -4,8 +4,10 @@ from ..models import Comment
 
 
 class CommentForm(forms.ModelForm):
+    """A form for creating and editing comments using CKEditor 5."""
 
     def __init__(self, *args, **kwargs):
+        """Initialize the CommentForm."""
         super().__init__(*args, **kwargs)
         self.fields["comment_content"].required = False
 
