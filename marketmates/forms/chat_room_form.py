@@ -4,6 +4,7 @@ from ..models import ChatRoom, User
 
 
 class ChatRoomForm(forms.ModelForm):
+    """Form for creating and updating chat rooms."""
     class Meta:
         model = ChatRoom
         fields = ['name', 'capacity']

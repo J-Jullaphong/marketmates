@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from django.views import View
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin

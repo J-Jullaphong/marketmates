@@ -9,6 +9,7 @@ from .user import User
 
 
 class Comment(models.Model):
+    """Represents a comment in a forum."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     forum = models.ForeignKey(Forum, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -16,11 +17,13 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def get_images(self):
+        """Extracts all image URLs from the comment content."""
         soup = BeautifulSoup(self.comment_content, "html.parser")
         img_tags = soup.find_all("img")
         return [img["src"] for img in img_tags if "src" in img.attrs]
 
     def get_formatted_content(self):
+        """Returns the comment content without images."""
         soup = BeautifulSoup(self.comment_content, "html.parser")
         for img in soup.find_all("img"):
             img.decompose()
